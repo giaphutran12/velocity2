@@ -31,6 +31,7 @@ import SignOutButton from "./_components/sign-out-button";
 interface SearchParams {
   q?: string;
   broker_id?: string;
+  page?: string;
 }
 
 interface PageProps {
@@ -38,8 +39,13 @@ interface PageProps {
 }
 
 export default async function DealsPage({ searchParams }: PageProps) {
-  const { q, broker_id } = await searchParams;
+  const { q, broker_id, page: pageParam } = await searchParams;
   const supabase = await createClient();
+
+  // Pagination setup
+  const pageSize = 20;
+  const currentPage = Math.max(1, parseInt(pageParam || "1", 10));
+  const offset = (currentPage - 1) * pageSize;
 
   // Get authenticated user
   const { data: { user } } = await supabase.auth.getUser();
@@ -95,6 +101,7 @@ export default async function DealsPage({ searchParams }: PageProps) {
     }>;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   }> = [] as any;
+  let totalCount = 0;
 
   if (q && q.trim()) {
     const searchTerm = q.trim();
@@ -115,7 +122,8 @@ export default async function DealsPage({ searchParams }: PageProps) {
           email,
           cell_phone
         )
-      `
+      `,
+        { count: "exact" }
       )
       .or(
         `loan_code.ilike.%${searchTerm}%`
@@ -126,13 +134,14 @@ export default async function DealsPage({ searchParams }: PageProps) {
       dealsQuery = dealsQuery.eq("broker_id", selectedBrokerId);
     }
 
-    const { data, error } = await dealsQuery
+    const { data, error, count } = await dealsQuery
       .order("date_created", { ascending: false })
-      .limit(50);
+      .range(offset, offset + pageSize - 1);
 
     if (!error && data) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       deals = data as any;
+      totalCount = count || 0;
     }
 
     // If no results from loan_code, search borrowers
@@ -207,7 +216,8 @@ export default async function DealsPage({ searchParams }: PageProps) {
           email,
           cell_phone
         )
-      `
+      `,
+        { count: "exact" }
       );
 
     // Apply broker filter for admin
@@ -215,13 +225,14 @@ export default async function DealsPage({ searchParams }: PageProps) {
       recentDealsQuery = recentDealsQuery.eq("broker_id", selectedBrokerId);
     }
 
-    const { data } = await recentDealsQuery
+    const { data, count } = await recentDealsQuery
       .order("date_created", { ascending: false })
-      .limit(20);
+      .range(offset, offset + pageSize - 1);
 
     if (data) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       deals = data as any;
+      totalCount = count || 0;
     }
   }
 
@@ -288,14 +299,33 @@ export default async function DealsPage({ searchParams }: PageProps) {
 
             {/* Results */}
             <div>
-              <p className="text-sm text-muted-foreground mb-4">
-                {q
-                  ? `${deals.length} result${deals.length !== 1 ? "s" : ""} for "${q}"`
-                  : `${deals.length} recent deal${deals.length !== 1 ? "s" : ""}`}
-              </p>
+              {(() => {
+                const totalPages = Math.ceil(totalCount / pageSize);
+                const startItem = totalCount > 0 ? offset + 1 : 0;
+                const endItem = Math.min(offset + pageSize, totalCount);
 
-              {deals.length > 0 ? (
-                <Table>
+                // Build URL params for pagination links
+                const buildPageUrl = (page: number) => {
+                  const params = new URLSearchParams();
+                  params.set("page", page.toString());
+                  if (q) params.set("q", q);
+                  if (selectedBrokerId && selectedBrokerId !== "all") params.set("broker_id", selectedBrokerId);
+                  return `?${params.toString()}`;
+                };
+
+                return (
+                  <>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      {totalCount > 0
+                        ? `Showing ${startItem} to ${endItem} of ${totalCount} deal${totalCount !== 1 ? "s" : ""}${q ? ` for "${q}"` : ""}`
+                        : q
+                          ? `No results for "${q}"`
+                          : "No deals available"}
+                    </p>
+
+                    {deals.length > 0 ? (
+                      <>
+                        <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Loan Code</TableHead>
@@ -356,31 +386,60 @@ export default async function DealsPage({ searchParams }: PageProps) {
                     })}
                   </TableBody>
                 </Table>
-              ) : (
-                <Card className="border-dashed">
-                  <CardContent className="flex flex-col items-center justify-center py-12">
-                    <svg
-                      className="mx-auto h-12 w-12 text-muted-foreground"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                    <h3 className="mt-2 text-sm font-medium">
-                      No deals found
-                    </h3>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {q ? "Try a different search term" : "No recent deals available"}
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
+
+                        {/* Pagination Controls */}
+                        {totalPages > 1 && (
+                          <div className="flex items-center justify-between mt-4 pt-4 border-t">
+                            <p className="text-sm text-muted-foreground">
+                              Page {currentPage} of {totalPages}
+                            </p>
+                            <div className="flex gap-2">
+                              {currentPage > 1 && (
+                                <Button asChild variant="outline" size="sm">
+                                  <Link href={buildPageUrl(currentPage - 1)}>
+                                    Previous
+                                  </Link>
+                                </Button>
+                              )}
+                              {currentPage < totalPages && (
+                                <Button asChild variant="outline" size="sm">
+                                  <Link href={buildPageUrl(currentPage + 1)}>
+                                    Next
+                                  </Link>
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <Card className="border-dashed">
+                        <CardContent className="flex flex-col items-center justify-center py-12">
+                          <svg
+                            className="mx-auto h-12 w-12 text-muted-foreground"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
+                          <h3 className="mt-2 text-sm font-medium">
+                            No deals found
+                          </h3>
+                          <p className="mt-1 text-sm text-muted-foreground">
+                            {q ? "Try a different search term" : "No recent deals available"}
+                          </p>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </>
+                );
+              })()}
             </div>
           </CardContent>
         </Card>
