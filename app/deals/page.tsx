@@ -119,7 +119,7 @@ export default async function DealsPage({ searchParams }: PageProps) {
       );
 
     // If admin with selected broker, filter by broker_id
-    if (userIsAdmin && selectedBrokerId) {
+    if (userIsAdmin && selectedBrokerId && selectedBrokerId !== "all") {
       dealsQuery = dealsQuery.eq("broker_id", selectedBrokerId);
     }
 
@@ -171,7 +171,7 @@ export default async function DealsPage({ searchParams }: PageProps) {
           .in("id", dealIds);
 
         // If admin with selected broker, filter by broker_id
-        if (userIsAdmin && selectedBrokerId) {
+        if (userIsAdmin && selectedBrokerId && selectedBrokerId !== "all") {
           dealDataQuery = dealDataQuery.eq("broker_id", selectedBrokerId);
         }
 
@@ -194,12 +194,12 @@ export default async function DealsPage({ searchParams }: PageProps) {
             <form method="GET" className="flex items-center gap-3">
               <span className="font-semibold text-primary">Admin View</span>
               {q && <input type="hidden" name="q" value={q} />}
-              <Select name="broker_id" defaultValue={selectedBrokerId || ""}>
+              <Select name="broker_id" defaultValue={selectedBrokerId || "all"}>
                 <SelectTrigger className="w-[200px]">
                   <SelectValue placeholder="All Brokers" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Brokers</SelectItem>
+                  <SelectItem value="all">All Brokers</SelectItem>
                   {allBrokers.map((b) => (
                     <SelectItem key={b.id} value={b.id}>
                       {b.name}
@@ -231,7 +231,7 @@ export default async function DealsPage({ searchParams }: PageProps) {
           <CardContent className="space-y-6">
             {/* Search Form */}
             <form method="GET">
-              {selectedBrokerId && (
+              {selectedBrokerId && selectedBrokerId !== "all" && (
                 <input type="hidden" name="broker_id" value={selectedBrokerId} />
               )}
               <div className="flex gap-3">
