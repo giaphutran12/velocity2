@@ -1,10 +1,9 @@
 "use client";
 
-import { useRef, useState, useCallback } from "react";
-import { useReactToPrint } from "react-to-print";
+import { useState, useCallback } from "react";
 import ProposalPrint, { Liability, ProposalData } from "./proposal-print";
+import { ProposalPDFDownload } from "./proposal-pdf-download";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -24,8 +23,6 @@ interface ProposalFormProps {
 }
 
 export default function ProposalForm({ deal }: ProposalFormProps) {
-  const printRef = useRef<HTMLDivElement>(null);
-
   // Editable state
   const [rate, setRate] = useState(deal.initialRate);
   const [mortgageAmount, setMortgageAmount] = useState(deal.initialMortgageAmount);
@@ -91,11 +88,6 @@ export default function ProposalForm({ deal }: ProposalFormProps) {
     totalInterest: Math.max(0, totalInterest),
     estimatedFees: deal.estimatedFees,
   };
-
-  const handlePrint = useReactToPrint({
-    contentRef: printRef,
-    documentTitle: `Proposal-${deal.loanCode}`,
-  });
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-CA", {
@@ -173,23 +165,7 @@ export default function ProposalForm({ deal }: ProposalFormProps) {
                 />
               </div>
             </div>
-            <Button onClick={() => handlePrint()}>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                />
-              </svg>
-              Download PDF
-            </Button>
+            <ProposalPDFDownload data={proposalData} loanCode={deal.loanCode} />
           </div>
 
           {/* Quick Stats */}
@@ -265,7 +241,7 @@ export default function ProposalForm({ deal }: ProposalFormProps) {
       {/* Preview */}
       <div className="max-w-4xl mx-auto py-6 px-4">
         <Card className="overflow-hidden">
-          <ProposalPrint ref={printRef} data={proposalData} />
+          <ProposalPrint data={proposalData} />
         </Card>
       </div>
     </div>
