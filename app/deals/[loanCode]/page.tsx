@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { isAdmin } from "@/lib/admin";
 import ProposalForm from "./_components/proposal-form";
 import Link from "next/link";
 
@@ -17,8 +18,12 @@ export default async function DealDetailPage({ params }: PageProps) {
     redirect("/login");
   }
 
+  // Check if user is admin - use admin client to bypass RLS
+  const userIsAdmin = await isAdmin(user.email);
+  const queryClient = userIsAdmin ? await createAdminClient() : supabase;
+
   // Fetch deal with all relations in one query
-  const { data: deal, error } = await supabase
+  const { data: deal, error } = await queryClient
     .from("vl_deals")
     .select(
       `
