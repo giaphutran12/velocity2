@@ -62,18 +62,70 @@ const ProposalPrint = forwardRef<HTMLDivElement, ProposalPrintProps>(
               max-width: 100%;
               box-shadow: none;
             }
+
+            /* Small sections that should never split */
+            .hero-section,
+            .benefit-card,
+            .cta-section,
+            .proposed-solution,
+            .loan-details,
+            .footer,
+            .total-row {
+              break-inside: avoid;
+              page-break-inside: avoid;
+            }
+            /*Individual debt rows stay together*/
+            .comparison-row {
+              break-inside: avoid;
+            }
+            /*Section titel stays with first row*/
+            .section-title {
+              break-after: avoid;
+            }
+
+            /*page margin - creates space at bottom for footer*/
+            @page {
+              margin-bottom: 60px;
+              margin-top: 60px;
+              /*Hider broser's default header/footer */
+              @top-left {
+                content: none;
+              }
+              @top-right {
+                content: none;
+              }
+              @bottom-left {
+                content: none;
+              }
+              @bottom-right {
+                content: none;
+              }
+            }
+            /*repeating footer on every page */
+            .footer {
+              position: fixed;
+              bottom: 0;
+              left: 0;
+              right: 0;
+            }
           }
 
           .header {
             background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
             color: white;
-            padding: 40px 50px;
+            padding: 25px 50px;
           }
 
-          .logo {
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 10px;
+          .header-content {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+          }
+
+          .logo-image {
+            height: 60px;
+            width: auto;
+            border-radius: 50%;
           }
 
           .client-name {
@@ -316,13 +368,24 @@ const ProposalPrint = forwardRef<HTMLDivElement, ProposalPrintProps>(
             font-size: 12px;
             color: #37474f;
           }
+
+          .footer {
+            padding: 20px 50px;
+            text-align: center;
+            font-size: 12px;
+            color: #546e7a;
+            border-top: 1px solid #e0e0e0;
+            background: white;
+          }
         `}</style>
 
         {/* Header */}
         <div className="header">
-          <div className="logo">Blue Pearl Financial</div>
-          <div className="client-name">
-            Mortgage Proposal for {data.borrowerName}
+          <div className="header-content">
+            <img src="/BP_Logo.webp" alt="Blue Pearl" className="logo-image" />
+            <div className="client-name">
+              Mortgage Proposal for {data.borrowerName}
+            </div>
           </div>
         </div>
 
@@ -427,7 +490,9 @@ const ProposalPrint = forwardRef<HTMLDivElement, ProposalPrintProps>(
             <div className="details-grid">
               <div className="detail-item">
                 <div className="detail-label">Interest Rate</div>
-                <div className="detail-value">{formatPercent(data.newRate)}</div>
+                <div className="detail-value">
+                  {formatPercent(data.newRate)}
+                </div>
               </div>
               <div className="detail-item">
                 <div className="detail-label">Term</div>
@@ -499,6 +564,11 @@ const ProposalPrint = forwardRef<HTMLDivElement, ProposalPrintProps>(
             Alberta Brokerage #389306 • Saskatchewan Brokerage #316807 • Ontario
             FSCO License #12890
           </p>
+        </div>
+
+        {/* Footer */}
+        <div className="footer">
+          © 2025 Blue Pearl Inc. All rights reserved.
         </div>
       </div>
     );
