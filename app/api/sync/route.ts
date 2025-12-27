@@ -44,13 +44,13 @@ function formatError(error: { message?: string; code?: string; details?: string;
   return error.message || error.code || error.details || error.hint || JSON.stringify(error);
 }
 
-async function syncDeal(deal: VelocityDeal): Promise<SyncResult> {
+async function syncDeal(deal: VelocityDeal, brokerId: string): Promise<SyncResult> {
   const loanCode = deal.loanCode;
   const supabase = getSupabase();
 
   try {
-    // 1. Upsert deal
-    const dealRow = transformDeal(deal);
+    // 1. Upsert deal with broker_id
+    const dealRow = { ...transformDeal(deal), broker_id: brokerId };
     const { data: dealData, error: dealError } = await supabase
       .from("vl_deals")
       .upsert(dealRow, { onConflict: "loan_code" })
@@ -295,6 +295,39 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
+    // Require broker_id
+    const brokerId = body.broker_id;
+    if (!brokerId || typeof brokerId !== "string") {
+      return NextResponse.json(
+        { error: "Missing required field: broker_id (UUID of the broker)" },
+        { status: 400 }
+      );
+    }
+
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(brokerId)) {
+      return NextResponse.json(
+        { error: "Invalid broker_id format. Must be a valid UUID." },
+        { status: 400 }
+      );
+    }
+
+    // Verify broker exists in database
+    const supabase = getSupabase();
+    const { data: broker, error: brokerError } = await supabase
+      .from("vl_brokers")
+      .select("id")
+      .eq("id", brokerId)
+      .single();
+
+    if (brokerError || !broker) {
+      return NextResponse.json(
+        { error: "Broker not found. The specified broker_id does not exist." },
+        { status: 404 }
+      );
+    }
+
     // Accept either single deal or array of deals or Velocity API response
     let deals: VelocityDeal[];
     if (body.deals) {
@@ -307,13 +340,13 @@ export async function POST(request: NextRequest) {
       deals = [body];
     } else {
       return NextResponse.json(
-        { error: "Invalid request body. Expected deals array or single deal." },
+        { error: "Invalid request body. Expected deals array or single deal with broker_id." },
         { status: 400 }
       );
     }
 
-    // Sync all deals
-    const results = await Promise.all(deals.map(syncDeal));
+    // Sync all deals with broker_id
+    const results = await Promise.all(deals.map((deal) => syncDeal(deal, brokerId)));
 
     const successful = results.filter((r) => r.success);
     const failed = results.filter((r) => !r.success);
@@ -342,6 +375,7 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({
     status: "ok",
     message: "POST Velocity deal data to this endpoint to sync to Supabase",
-    example: "POST with Velocity API response body: { deals: [...] }",
+    example: "POST with body: { broker_id: 'uuid', deals: [...] }",
+    required: ["broker_id"],
   });
 }

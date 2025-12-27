@@ -240,7 +240,7 @@ export default async function DealsPage({ searchParams }: PageProps) {
     <div className="min-h-screen bg-gray-50">
       {/* Header with broker name and sign out */}
       <header className="bg-white border-b">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           {userIsAdmin ? (
             <form method="GET" className="flex items-center gap-3">
               <span className="font-semibold text-primary">Admin View</span>
@@ -271,7 +271,7 @@ export default async function DealsPage({ searchParams }: PageProps) {
         </div>
       </header>
 
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-4 py-8">
         <Card>
           <CardHeader>
             <CardTitle className="text-2xl">Deal Search</CardTitle>
