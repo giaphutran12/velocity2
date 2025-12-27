@@ -34,6 +34,15 @@
 - Use supabase cli when possible, it's faster than using the ui
 - Use supabase cli whenever possible
 
+### Environment Variables
+
+```
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY
+SUPABASE_SERVICE_ROLE_KEY
+CRON_SECRET
+```
+
 ## Playwright MCP
 
 - Use this to verify ui, and read files that would otherwise be hard to read (pdf, images)

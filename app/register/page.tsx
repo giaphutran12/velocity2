@@ -1,72 +1,87 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { useState } from "react";
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
+} from "@/components/ui/card";
 
 export default function RegisterPage() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
-  const [loading, setLoading] = useState(false)
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError(null)
-    setLoading(true)
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
 
     // Validate email domain
-    const emailDomain = email.split('@')[1]?.toLowerCase()
-    if (!emailDomain || !['bluepearlmortgage.ca', 'bluepearl.ca'].includes(emailDomain)) {
-      setError('Please use your BluePearl email address (@bluepearlmortgage.ca or @bluepearl.ca)')
-      setLoading(false)
-      return
+    const emailDomain = email.split("@")[1]?.toLowerCase();
+    if (
+      !emailDomain ||
+      !["bluepearlmortgage.ca", "bluepearl.ca"].includes(emailDomain)
+    ) {
+      setError(
+        "Please use your BluePearl email address (@bluepearlmortgage.ca or @bluepearl.ca)"
+      );
+      setLoading(false);
+      return;
     }
 
     // Validate passwords match
     if (password !== confirmPassword) {
-      setError('Passwords do not match')
-      setLoading(false)
-      return
+      setError("Passwords do not match");
+      setLoading(false);
+      return;
     }
 
     // Validate password length
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters')
-      setLoading(false)
-      return
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters");
+      setLoading(false);
+      return;
     }
-
-    const supabase = createClient()
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+    if (!hasLowerCase || !hasUpperCase || !hasNumber || !hasSpecial) {
+      setError(
+        "Password must include lowercase, uppercase, number and special character"
+      );
+      setLoading(false);
+      return;
+    }
+    const supabase = createClient();
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
-    })
+    });
 
     if (error) {
-      setError(error.message)
-      setLoading(false)
-      return
+      setError(error.message);
+      setLoading(false);
+      return;
     }
 
-    setSuccess(true)
-    setLoading(false)
-  }
+    setSuccess(true);
+    setLoading(false);
+  };
 
   if (success) {
     return (
@@ -80,7 +95,8 @@ export default function RegisterPage() {
           </CardHeader>
           <CardContent className="text-center">
             <p className="text-sm text-muted-foreground mb-4">
-              Click the link in your email to verify your account and complete registration.
+              Click the link in your email to verify your account and complete
+              registration.
             </p>
             <Link href="/login">
               <Button variant="outline">Back to Login</Button>
@@ -88,7 +104,7 @@ export default function RegisterPage() {
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   return (
@@ -96,9 +112,7 @@ export default function RegisterPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Create Account</CardTitle>
-          <CardDescription>
-            Register with your BluePearl email
-          </CardDescription>
+          <CardDescription>Register with your BluePearl email</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleRegister} className="space-y-4">
@@ -144,11 +158,11 @@ export default function RegisterPage() {
               </p>
             )}
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Creating account...' : 'Register'}
+              {loading ? "Creating account..." : "Register"}
             </Button>
           </form>
           <p className="mt-4 text-center text-sm text-muted-foreground">
-            Already have an account?{' '}
+            Already have an account?{" "}
             <Link href="/login" className="text-primary hover:underline">
               Sign In
             </Link>
@@ -156,5 +170,5 @@ export default function RegisterPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
