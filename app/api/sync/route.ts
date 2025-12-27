@@ -53,12 +53,36 @@ async function syncDeal(deal: VelocityDeal): Promise<SyncResult> {
     if (dealError) throw new Error(`Deal upsert failed: ${formatError(dealError)}`);
     const dealId = dealData.id;
 
-    // 2. Delete existing child records (cascade will handle nested)
-    await supabase.from("vl_borrowers").delete().eq("deal_id", dealId);
-    await supabase.from("vl_subject_properties").delete().eq("deal_id", dealId);
-    await supabase.from("vl_mortgage_requests").delete().eq("deal_id", dealId);
-    await supabase.from("vl_conditions").delete().eq("deal_id", dealId);
-    await supabase.from("vl_notes").delete().eq("deal_id", dealId);
+    // 2. Delete orphaned children (only those that no longer exist in Velocity)
+    // Borrowers: delete where index >= current count
+    await supabase
+      .from("vl_borrowers")
+      .delete()
+      .eq("deal_id", dealId)
+      .gte("borrower_index", deal.borrowers?.length || 0);
+
+    // Conditions: delete orphans then upsert
+    const brokerConditionsCount = deal.conditions?.length || 0;
+    const lenderConditionsCount = deal.lenderConditions?.length || 0;
+    await supabase
+      .from("vl_conditions")
+      .delete()
+      .eq("deal_id", dealId)
+      .eq("condition_type", "broker")
+      .gte("condition_index", brokerConditionsCount);
+    await supabase
+      .from("vl_conditions")
+      .delete()
+      .eq("deal_id", dealId)
+      .eq("condition_type", "lender")
+      .gte("condition_index", lenderConditionsCount);
+
+    // Notes: delete orphans then upsert
+    await supabase
+      .from("vl_notes")
+      .delete()
+      .eq("deal_id", dealId)
+      .gte("note_index", deal.notes?.length || 0);
 
     const stats = {
       borrowers: 0,
@@ -157,7 +181,7 @@ async function syncDeal(deal: VelocityDeal): Promise<SyncResult> {
       }
     }
 
-    // 4. Insert subject property
+    // 4. Subject property (upsert - 1:1 with deal)
     const subjectPropertyRow = transformSubjectProperty(
       dealId,
       deal.subjectProperty
@@ -165,12 +189,12 @@ async function syncDeal(deal: VelocityDeal): Promise<SyncResult> {
     if (subjectPropertyRow) {
       const { error } = await supabase
         .from("vl_subject_properties")
-        .insert(subjectPropertyRow);
+        .upsert(subjectPropertyRow, { onConflict: "deal_id" });
       if (error)
-        throw new Error(`Subject property insert failed: ${formatError(error)}`);
+        throw new Error(`Subject property upsert failed: ${formatError(error)}`);
     }
 
-    // 5. Insert mortgage request and mortgages
+    // 5. Mortgage request and mortgages (upsert - 1:1 with deal)
     const mortgageRequestRow = transformMortgageRequest(
       dealId,
       deal.mortgageRequest
@@ -178,14 +202,21 @@ async function syncDeal(deal: VelocityDeal): Promise<SyncResult> {
     if (mortgageRequestRow) {
       const { data: mrData, error: mrError } = await supabase
         .from("vl_mortgage_requests")
-        .insert(mortgageRequestRow)
+        .upsert(mortgageRequestRow, { onConflict: "deal_id" })
         .select("id")
         .single();
 
       if (mrError)
-        throw new Error(`Mortgage request insert failed: ${formatError(mrError)}`);
+        throw new Error(`Mortgage request upsert failed: ${formatError(mrError)}`);
 
-      // Insert mortgages
+      // Delete orphan mortgages, then upsert
+      const mortgagesCount = deal.mortgageRequest?.mortgages?.length || 0;
+      await supabase
+        .from("vl_mortgages")
+        .delete()
+        .eq("mortgage_request_id", mrData.id)
+        .gte("mortgage_index", mortgagesCount);
+
       if (deal.mortgageRequest?.mortgages?.length) {
         const mortgageRows = transformMortgages(
           mrData.id,
@@ -193,13 +224,13 @@ async function syncDeal(deal: VelocityDeal): Promise<SyncResult> {
         );
         const { error } = await supabase
           .from("vl_mortgages")
-          .insert(mortgageRows);
+          .upsert(mortgageRows, { onConflict: "mortgage_request_id,mortgage_index" });
         if (error)
-          throw new Error(`Mortgages insert failed: ${formatError(error)}`);
+          throw new Error(`Mortgages upsert failed: ${formatError(error)}`);
       }
     }
 
-    // 6. Insert conditions (broker + lender)
+    // 6. Conditions (upsert - orphans already deleted above)
     const brokerConditions = transformConditions(
       dealId,
       deal.conditions || [],
@@ -215,17 +246,19 @@ async function syncDeal(deal: VelocityDeal): Promise<SyncResult> {
     if (allConditions.length) {
       const { error } = await supabase
         .from("vl_conditions")
-        .insert(allConditions);
+        .upsert(allConditions, { onConflict: "deal_id,condition_type,condition_index" });
       if (error)
-        throw new Error(`Conditions insert failed: ${formatError(error)}`);
+        throw new Error(`Conditions upsert failed: ${formatError(error)}`);
       stats.conditions = allConditions.length;
     }
 
-    // 7. Insert notes
+    // 7. Notes (upsert - orphans already deleted above)
     const noteRows = transformNotes(dealId, deal.notes || []);
     if (noteRows.length) {
-      const { error } = await supabase.from("vl_notes").insert(noteRows);
-      if (error) throw new Error(`Notes insert failed: ${formatError(error)}`);
+      const { error } = await supabase
+        .from("vl_notes")
+        .upsert(noteRows, { onConflict: "deal_id,note_index" });
+      if (error) throw new Error(`Notes upsert failed: ${formatError(error)}`);
       stats.notes = noteRows.length;
     }
 
