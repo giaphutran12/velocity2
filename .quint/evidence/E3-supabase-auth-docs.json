@@ -1,0 +1,45 @@
+{
+  "id": "E3",
+  "title": "Supabase Auth Documentation - Email Domain Restriction",
+  "supports": "H5",
+  "congruence": "CL3",
+  "timestamp": "2025-12-26T10:30:00Z",
+  "source": "https://supabase.com/llms/guides.txt (Context7)",
+  "findings": [
+    {
+      "feature": "Email Domain Restriction",
+      "method": "Edge Function with before-user-created hook",
+      "code_example": "allowedDomains = ['bluepearlmortgage.ca', 'bluepearl.ca'] + wh.verify()",
+      "notes": "Official Supabase pattern - validates email domain at signup time, returns 400 if not in allowed list"
+    },
+    {
+      "feature": "Middleware Authentication",
+      "method": "@supabase/ssr with createServerClient",
+      "code_example": "user?.email?.endsWith('@gmail.com') pattern",
+      "notes": "Can check email domain in middleware for route protection. Uses cookie-based session."
+    },
+    {
+      "feature": "Session Management",
+      "method": "updateSession middleware pattern",
+      "code_example": "await supabase.auth.getUser() in middleware",
+      "notes": "Refreshes auth tokens before reaching server components. Handles cookie sync."
+    },
+    {
+      "feature": "Protected Routes",
+      "method": "Middleware matcher + redirect",
+      "code_example": "if (!user) NextResponse.redirect('/login')",
+      "notes": "Standard Next.js middleware pattern with Supabase integration"
+    }
+  ],
+  "implementation_path": [
+    "1. Create edge function for before-user-created hook (domain restriction)",
+    "2. Create lib/supabase/server.ts with createServerClient",
+    "3. Create lib/supabase/client.ts with createBrowserClient",
+    "4. Create middleware.ts with updateSession + auth check",
+    "5. Create /login page with Supabase Auth UI or custom form",
+    "6. Add RLS policies using auth.uid()"
+  ],
+  "packages_required": [
+    "@supabase/ssr (replaces @supabase/auth-helpers-nextjs)"
+  ]
+}

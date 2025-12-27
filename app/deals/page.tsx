@@ -1,4 +1,6 @@
-import { getSupabase } from "@/lib/supabase";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { isAdmin } from "@/lib/admin";
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -17,9 +19,18 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import SignOutButton from "./_components/sign-out-button";
 
 interface SearchParams {
   q?: string;
+  broker_id?: string;
 }
 
 interface PageProps {
@@ -27,8 +38,48 @@ interface PageProps {
 }
 
 export default async function DealsPage({ searchParams }: PageProps) {
-  const { q } = await searchParams;
-  const supabase = getSupabase();
+  const { q, broker_id } = await searchParams;
+  const supabase = await createClient();
+
+  // Get authenticated user
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    redirect("/login");
+  }
+
+  // Check if user is admin
+  const userIsAdmin = await isAdmin(user.email);
+
+  // Variables for broker info and admin data
+  let broker: { id: string; name: string } | null = null;
+  let allBrokers: Array<{ id: string; name: string }> = [];
+  let selectedBrokerId: string | undefined = broker_id;
+
+  if (userIsAdmin) {
+    // Admin: fetch all brokers using admin client
+    const adminSupabase = await createAdminClient();
+    const { data: brokers } = await adminSupabase
+      .from("vl_brokers")
+      .select("id, name")
+      .order("name");
+    allBrokers = brokers || [];
+  } else {
+    // Regular user: get their linked broker
+    const { data: brokerData } = await supabase
+      .from("vl_brokers")
+      .select("id, name")
+      .eq("user_id", user.id)
+      .single();
+
+    if (!brokerData) {
+      // User not linked to a broker yet
+      redirect("/register/confirm-broker");
+    }
+    broker = brokerData;
+  }
+
+  // Determine which client to use for queries
+  const queryClient = userIsAdmin ? await createAdminClient() : supabase;
 
   let deals: Array<{
     id: string;
@@ -47,7 +98,7 @@ export default async function DealsPage({ searchParams }: PageProps) {
     const searchTerm = q.trim();
 
     // Search by loan_code, borrower name, email, or phone
-    const { data, error } = await supabase
+    let dealsQuery = queryClient
       .from("vl_deals")
       .select(
         `
@@ -65,7 +116,14 @@ export default async function DealsPage({ searchParams }: PageProps) {
       )
       .or(
         `loan_code.ilike.%${searchTerm}%`
-      )
+      );
+
+    // If admin with selected broker, filter by broker_id
+    if (userIsAdmin && selectedBrokerId) {
+      dealsQuery = dealsQuery.eq("broker_id", selectedBrokerId);
+    }
+
+    const { data, error } = await dealsQuery
       .order("date_created", { ascending: false })
       .limit(50);
 
@@ -75,7 +133,7 @@ export default async function DealsPage({ searchParams }: PageProps) {
 
     // If no results from loan_code, search borrowers
     if (deals.length === 0) {
-      const { data: borrowerData } = await supabase
+      const { data: borrowerData } = await queryClient
         .from("vl_borrowers")
         .select(
           `
@@ -94,7 +152,7 @@ export default async function DealsPage({ searchParams }: PageProps) {
       if (borrowerData && borrowerData.length > 0) {
         const dealIds = [...new Set(borrowerData.map((b) => b.deal_id))];
 
-        const { data: dealData } = await supabase
+        let dealDataQuery = queryClient
           .from("vl_deals")
           .select(
             `
@@ -110,7 +168,14 @@ export default async function DealsPage({ searchParams }: PageProps) {
             )
           `
           )
-          .in("id", dealIds)
+          .in("id", dealIds);
+
+        // If admin with selected broker, filter by broker_id
+        if (userIsAdmin && selectedBrokerId) {
+          dealDataQuery = dealDataQuery.eq("broker_id", selectedBrokerId);
+        }
+
+        const { data: dealData } = await dealDataQuery
           .order("date_created", { ascending: false });
 
         if (dealData) {
@@ -122,6 +187,39 @@ export default async function DealsPage({ searchParams }: PageProps) {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Header with broker name and sign out */}
+      <header className="bg-white border-b">
+        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+          {userIsAdmin ? (
+            <form method="GET" className="flex items-center gap-3">
+              <span className="font-semibold text-primary">Admin View</span>
+              {q && <input type="hidden" name="q" value={q} />}
+              <Select name="broker_id" defaultValue={selectedBrokerId || ""}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="All Brokers" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Brokers</SelectItem>
+                  {allBrokers.map((b) => (
+                    <SelectItem key={b.id} value={b.id}>
+                      {b.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button type="submit" variant="outline" size="sm">
+                Apply
+              </Button>
+            </form>
+          ) : (
+            <div className="flex items-center gap-2">
+              <span className="font-semibold">Welcome, {broker?.name}</span>
+            </div>
+          )}
+          <SignOutButton />
+        </div>
+      </header>
+
       <div className="max-w-4xl mx-auto px-4 py-8">
         <Card>
           <CardHeader>
@@ -133,6 +231,9 @@ export default async function DealsPage({ searchParams }: PageProps) {
           <CardContent className="space-y-6">
             {/* Search Form */}
             <form method="GET">
+              {selectedBrokerId && (
+                <input type="hidden" name="broker_id" value={selectedBrokerId} />
+              )}
               <div className="flex gap-3">
                 <Input
                   type="text"

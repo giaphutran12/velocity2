@@ -7,7 +7,8 @@
 - Subagents: make changes and report back, NO builds
 - Be super honest about everything.
 - **NEVER read .env files** - environment variables are private
-- Use parallel agents whenever it makes sense to speed up the process, save main agent context window, but don't deploy 10 agents for 2 small todos in the code base (you know what im saying)
+- Use parallel agents whenever it makes sense to speed up the process, save main agent context window
+- `/api/sync` and `/api/verify` require `Authorization: Bearer $CRON_SECRET` header
 
 ## UI Components (shadcn/ui)
 

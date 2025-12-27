@@ -1,0 +1,24 @@
+{
+  "id": "V1",
+  "hypothesis_id": "H5",
+  "title": "Supabase Auth Verification",
+  "timestamp": "2025-12-26T10:15:00Z",
+  "checks": {
+    "type_check": {
+      "result": "PASS",
+      "notes": "Uses existing @supabase/supabase-js v2.89.0, TypeScript native, no type conflicts"
+    },
+    "constraint_check": {
+      "result": "PASS",
+      "notes": "Zero new dependencies. Respects all invariants: Supabase PostgreSQL, TypeScript, vl_ prefix"
+    },
+    "logic_check": {
+      "result": "PASS",
+      "notes": "Method steps logically lead to outcome. auth.uid() in RLS policies directly enforces broker isolation. Email domain trigger prevents unauthorized signups."
+    }
+  },
+  "fv_score": 4,
+  "fv_rationale": "Native integration with existing stack. Well-documented APIs. Production-proven at scale. auth.uid() available in all RLS policies without custom work.",
+  "verdict": "PASS",
+  "promoted_to": "L1"
+}

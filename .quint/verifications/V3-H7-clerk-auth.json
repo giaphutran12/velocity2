@@ -1,0 +1,25 @@
+{
+  "id": "V3",
+  "hypothesis_id": "H7",
+  "title": "Clerk Auth Verification",
+  "timestamp": "2025-12-26T10:15:00Z",
+  "checks": {
+    "type_check": {
+      "result": "PASS",
+      "notes": "TypeScript compatible, @clerk/nextjs well-typed"
+    },
+    "constraint_check": {
+      "result": "FAIL",
+      "notes": "External SaaS dependency for critical auth path. Single point of failure outside our control. $25/month cost for 40 users is poor value."
+    },
+    "logic_check": {
+      "result": "CONDITIONAL",
+      "notes": "Webhook sync introduces latency and failure points for broker-deal linking. If webhook fails, RLS breaks."
+    }
+  },
+  "fv_score": 1,
+  "fv_rationale": "Overkill for 40 broker users. External dependency for critical path. Webhook complexity. Cost without commensurate benefit.",
+  "verdict": "FAIL",
+  "moved_to": "invalid",
+  "feedback": "Clerk is excellent for consumer apps with thousands of users needing social auth, MFA, etc. Poor fit for B2B internal tool with ~40 known users on a single email domain."
+}

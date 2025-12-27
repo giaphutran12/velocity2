@@ -1,0 +1,38 @@
+{
+  "id": "H7",
+  "title": "Clerk Managed Auth",
+  "approach": "Radical",
+  "layer": "INVALID",
+  "status": "FAILED",
+  "deduction": "FAIL",
+  "fv_score": 1,
+  "kind": "system",
+  "created_at": "2025-12-26T10:00:00Z",
+  "scope": "Fully managed authentication SaaS",
+  "content": {
+    "method": [
+      "1. Install @clerk/nextjs package",
+      "2. Configure Clerk dashboard with BluePearl domain restriction",
+      "3. Wrap app with <ClerkProvider>",
+      "4. Use Clerk middleware for route protection",
+      "5. Sync Clerk user IDs to vl_brokers via webhook",
+      "6. Custom RLS using Clerk JWT claims"
+    ],
+    "expected_outcome": "Beautiful pre-built auth UI, zero backend auth code, MFA included"
+  },
+  "rationale": {
+    "anomaly": "No authentication - anyone can view any deal",
+    "approach": "Offload auth entirely to managed SaaS",
+    "alternatives_rejected": [
+      "Self-hosted auth - more maintenance"
+    ]
+  },
+  "dependencies": ["@clerk/nextjs"],
+  "evidence": [],
+  "concerns": [
+    "$25/month production cost after 10k MAU",
+    "External dependency for critical auth path",
+    "Webhook sync complexity for Supabase RLS",
+    "Overkill for ~40 broker users"
+  ]
+}

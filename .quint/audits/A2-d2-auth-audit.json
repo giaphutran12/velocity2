@@ -1,0 +1,57 @@
+{
+  "id": "A2",
+  "decision_id": "D2",
+  "title": "Broker Authentication Library Audit",
+  "timestamp": "2025-12-26T10:45:00Z",
+  "hypotheses_audited": [
+    {
+      "id": "H5",
+      "title": "Supabase Auth with Email Domain Restriction",
+      "evidence": ["E3"],
+      "wlnk": {
+        "weakest_evidence": "E3",
+        "r_raw": 0.95,
+        "rationale": "Official Supabase documentation with production-ready code examples"
+      },
+      "congruence": {
+        "level": "CL3",
+        "penalty": 0,
+        "rationale": "Same context - Next.js + Supabase + TypeScript matches our stack exactly"
+      },
+      "r_eff": 0.95,
+      "risks": [
+        "Supabase Auth UI may need customization for BluePearl branding",
+        "Edge function for domain restriction requires Supabase CLI deployment"
+      ],
+      "status": "AUDITED"
+    },
+    {
+      "id": "H6",
+      "title": "Better Auth with Supabase Adapter",
+      "evidence": [],
+      "r_eff": null,
+      "status": "NOT_AUDITED",
+      "reason": "Stayed at L0 CONDITIONAL - no evidence gathered"
+    },
+    {
+      "id": "H7",
+      "title": "Clerk Managed Auth",
+      "evidence": [],
+      "r_eff": null,
+      "status": "INVALID",
+      "reason": "Failed deduction - external SaaS dependency, cost, webhook complexity"
+    }
+  ],
+  "bias_check": {
+    "pet_idea_risk": "LOW",
+    "pet_idea_notes": "H5 wins on objective technical merit - native integration, zero dependencies, auth.uid() in RLS",
+    "nih_risk": "LOW",
+    "nih_notes": "External options (Better Auth, Clerk) were evaluated fairly and rejected on constraints, not prejudice"
+  },
+  "recommendation": {
+    "winner": "H5",
+    "r_eff": 0.95,
+    "confidence": "HIGH",
+    "rationale": "Only hypothesis with evidence. Native Supabase integration is clearly superior for this use case."
+  }
+}

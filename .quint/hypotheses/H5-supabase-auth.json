@@ -1,0 +1,36 @@
+{
+  "id": "H5",
+  "title": "Supabase Auth with Email Domain Restriction",
+  "approach": "Conservative",
+  "layer": "L2",
+  "status": "ACCEPTED",
+  "decision_id": "D2",
+  "deduction": "PASS",
+  "fv_score": 4,
+  "kind": "system",
+  "created_at": "2025-12-26T10:00:00Z",
+  "scope": "Broker authentication, deal access control, RLS integration",
+  "content": {
+    "method": [
+      "1. Enable Supabase Auth (already in @supabase/supabase-js)",
+      "2. Create lib/supabase-browser.ts with anon key for client auth",
+      "3. Add email domain trigger to restrict signups to @bluepearlmortgage.ca and @bluepearl.ca",
+      "4. Add user_id FK to vl_brokers table, link on first login via email match",
+      "5. Add broker_id FK to vl_deals, update sync process to populate it",
+      "6. Add RLS policies using auth.uid() = broker.user_id",
+      "7. Create middleware.ts to protect /deals routes",
+      "8. Create login page at /login with Supabase Auth UI or custom form"
+    ],
+    "expected_outcome": "Brokers sign in with BluePearl email, see only their own deals, RLS enforced at database level"
+  },
+  "rationale": {
+    "anomaly": "No authentication - anyone can view any deal",
+    "approach": "Use native Supabase Auth for zero new dependencies and native RLS integration",
+    "alternatives_rejected": [
+      "Better Auth - adds complexity without benefit when already on Supabase",
+      "Clerk - overkill SaaS cost for ~40 brokers"
+    ]
+  },
+  "dependencies": [],
+  "evidence": []
+}

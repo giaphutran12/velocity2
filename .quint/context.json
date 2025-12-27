@@ -55,23 +55,43 @@
     {"from": "Q1_ABDUCTION", "to": "Q2_DEDUCTION_COMPLETE", "timestamp": "2024-12-23T17:30:00Z", "trigger": "/q2-check"},
     {"from": "Q2_DEDUCTION_COMPLETE", "to": "Q3_TESTING", "timestamp": "2024-12-27T00:30:00Z", "trigger": "migrations applied, sync API created"},
     {"from": "Q3_TESTING", "to": "Q4_AUDIT", "timestamp": "2025-12-27T04:30:00Z", "trigger": "100% sync success, H1 promoted to L2"},
-    {"from": "Q4_AUDIT", "to": "Q5_DECISION_COMPLETE", "timestamp": "2025-12-27T04:45:00Z", "trigger": "DRR created, H1 accepted"}
+    {"from": "Q4_AUDIT", "to": "Q5_DECISION_COMPLETE", "timestamp": "2025-12-27T04:45:00Z", "trigger": "DRR created, H1 accepted"},
+    {"from": "Q5_DECISION_COMPLETE", "to": "Q1_ABDUCTION", "timestamp": "2025-12-26T10:00:00Z", "trigger": "/q1-hypothesize for auth decision"}
   ],
-  "decision": {
-    "id": "D1",
-    "title": "Use Traditional Normalized ETL",
-    "winner": "H1",
-    "r_eff": 0.90,
-    "status": "ACCEPTED"
+  "decisions": [
+    {
+      "id": "D1",
+      "title": "Use Traditional Normalized ETL",
+      "winner": "H1",
+      "r_eff": 0.90,
+      "status": "ACCEPTED"
+    },
+    {
+      "id": "D2",
+      "title": "Broker Authentication with Supabase Auth",
+      "winner": "H5",
+      "r_eff": 0.95,
+      "status": "ACCEPTED"
+    }
+  ],
+  "current_decision_space": {
+    "id": "D2",
+    "title": "Broker Authentication Library",
+    "anomaly": "No authentication - anyone can view any deal. Brokers use BluePearl emails (@bluepearlmortgage.ca, @bluepearl.ca)",
+    "status": "DECISION_COMPLETE"
   },
   "hypotheses": [
-    {"id": "H1", "title": "Traditional Normalized ETL", "approach": "Conservative", "status": "L2_CORROBORATED", "deduction": "PASS", "validation": "PASS"},
-    {"id": "H2", "title": "JSONB Storage with Views", "approach": "Radical", "status": "L0_CONDITIONAL", "deduction": "CONDITIONAL"},
-    {"id": "H3", "title": "Hybrid: Core Normalized + JSONB", "approach": "Moderate", "status": "L0_CONDITIONAL", "deduction": "CONDITIONAL"},
-    {"id": "H4", "title": "Supabase Edge Functions + Realtime", "approach": "Progressive", "status": "INVALID", "deduction": "FAIL"}
+    {"id": "H1", "title": "Traditional Normalized ETL", "approach": "Conservative", "status": "L2_CORROBORATED", "deduction": "PASS", "validation": "PASS", "decision": "D1"},
+    {"id": "H2", "title": "JSONB Storage with Views", "approach": "Radical", "status": "L0_CONDITIONAL", "deduction": "CONDITIONAL", "decision": "D1"},
+    {"id": "H3", "title": "Hybrid: Core Normalized + JSONB", "approach": "Moderate", "status": "L0_CONDITIONAL", "deduction": "CONDITIONAL", "decision": "D1"},
+    {"id": "H4", "title": "Supabase Edge Functions + Realtime", "approach": "Progressive", "status": "INVALID", "deduction": "FAIL", "decision": "D1"},
+    {"id": "H5", "title": "Supabase Auth with Email Domain Restriction", "approach": "Conservative", "status": "L2_ACCEPTED", "deduction": "PASS", "fv_score": 4, "r_eff": 0.95, "decision": "D2"},
+    {"id": "H6", "title": "Better Auth with Supabase Adapter", "approach": "Progressive", "status": "L0_CONDITIONAL", "deduction": "CONDITIONAL", "fv_score": 2, "decision": "D2"},
+    {"id": "H7", "title": "Clerk Managed Auth", "approach": "Radical", "status": "INVALID", "deduction": "FAIL", "fv_score": 1, "decision": "D2"}
   ],
   "evidence": [
     {"id": "E1", "title": "Velocity API Data Structure Analysis", "supports": "H1", "congruence": "CL3"},
-    {"id": "E2", "title": "Q3 Full Sync Validation", "supports": "H1", "congruence": "CL3"}
+    {"id": "E2", "title": "Q3 Full Sync Validation", "supports": "H1", "congruence": "CL3"},
+    {"id": "E3", "title": "Supabase Auth Docs - Email Domain Restriction", "supports": "H5", "congruence": "CL3"}
   ]
 }

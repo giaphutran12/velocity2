@@ -1,5 +1,5 @@
-import { notFound } from "next/navigation";
-import { getSupabase } from "@/lib/supabase";
+import { notFound, redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
 import ProposalForm from "./_components/proposal-form";
 import Link from "next/link";
 
@@ -9,7 +9,13 @@ interface PageProps {
 
 export default async function DealDetailPage({ params }: PageProps) {
   const { loanCode } = await params;
-  const supabase = getSupabase();
+  const supabase = await createClient();
+
+  // Auth check
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    redirect("/login");
+  }
 
   // Fetch deal with all relations in one query
   const { data: deal, error } = await supabase

@@ -1,0 +1,90 @@
+{
+  "id": "D2",
+  "title": "Broker Authentication with Supabase Auth",
+  "winner_id": "H5",
+  "timestamp": "2025-12-26T11:00:00Z",
+  "status": "ACCEPTED",
+
+  "context": {
+    "problem": "No authentication exists - anyone can search and view any deal. Brokers need to sign in and only see their own deals.",
+    "constraints": [
+      "Brokers use BluePearl emails: @bluepearlmortgage.ca or @bluepearl.ca",
+      "~40 brokers total",
+      "Must integrate with existing Supabase PostgreSQL",
+      "Need RLS to enforce deal ownership at database level",
+      "vl_deals currently has no broker_id FK - needs migration"
+    ],
+    "stakeholders": ["Brokers", "BluePearl Admin"]
+  },
+
+  "decision": {
+    "statement": "We will use Supabase Auth with email domain restriction to authenticate brokers and enforce deal ownership via RLS policies.",
+    "hypothesis": "H5 - Supabase Auth with Email Domain Restriction",
+    "r_eff": 0.95
+  },
+
+  "rationale": {
+    "why_this_option": [
+      "Native Supabase integration - zero new dependencies",
+      "auth.uid() available in all RLS policies without custom work",
+      "Official documentation with exact patterns for our stack (Next.js + Supabase)",
+      "Edge function provides secure domain restriction at signup time",
+      "Cookie-based sessions with automatic refresh via middleware"
+    ],
+    "alternatives_rejected": [
+      {
+        "id": "H6",
+        "title": "Better Auth",
+        "reason": "Adds dependency + complexity without benefit. Manual RLS integration required."
+      },
+      {
+        "id": "H7",
+        "title": "Clerk",
+        "reason": "Overkill for 40 users. External SaaS dependency. $25/month cost. Webhook complexity for RLS."
+      }
+    ],
+    "evidence": ["E3 - Supabase Auth Docs (CL3, R=0.95)"]
+  },
+
+  "consequences": {
+    "immediate_actions": [
+      "1. Install @supabase/ssr package",
+      "2. Create Supabase client utilities (server.ts, client.ts, middleware.ts)",
+      "3. Deploy edge function for email domain restriction",
+      "4. Create login page at /login",
+      "5. Add user_id column to vl_brokers table",
+      "6. Add broker_id column to vl_deals table",
+      "7. Update sync process to populate broker_id",
+      "8. Create RLS policies using auth.uid()",
+      "9. Update deals page to filter by authenticated broker"
+    ],
+    "trade_offs": [
+      "Pro: Zero new dependencies, native RLS support",
+      "Pro: Production-proven, well-documented",
+      "Con: Need to migrate vl_deals to add broker_id",
+      "Con: Supabase Auth UI may need branding customization"
+    ],
+    "future_considerations": [
+      "If user count exceeds 10k, Supabase Auth pricing may change",
+      "If SSO required, may need to upgrade Supabase plan"
+    ]
+  },
+
+  "validity": {
+    "revisit_conditions": [
+      "User count exceeds 1000 (unlikely with 40 brokers)",
+      "SSO/SAML requirement from enterprise customers",
+      "Multi-tenant architecture needed (separate orgs)"
+    ],
+    "decay_period": "12 months",
+    "decay_trigger": "Major Supabase Auth breaking changes"
+  },
+
+  "characteristics": {
+    "complexity": "B (Medium-Low)",
+    "cost": "A (Free tier)",
+    "security": "A (Database-level RLS)",
+    "maintainability": "A (Native integration)",
+    "time_to_implement": "B (1-2 days)"
+  }
+}

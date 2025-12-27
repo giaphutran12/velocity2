@@ -46,13 +46,13 @@ function formatError(error: { message?: string; code?: string; details?: string 
 }
 
 // Sync a single deal (reused from /api/sync)
-async function syncDeal(deal: VelocityDeal): Promise<SyncResult> {
+async function syncDeal(deal: VelocityDeal, brokerId: string): Promise<SyncResult> {
   const loanCode = deal.loanCode;
   const supabase = getSupabase();
 
   try {
-    // 1. Upsert deal
-    const dealRow = transformDeal(deal);
+    // 1. Upsert deal with broker_id
+    const dealRow = { ...transformDeal(deal), broker_id: brokerId };
     const { data: dealData, error: dealError } = await supabase
       .from("vl_deals")
       .upsert(dealRow, { onConflict: "loan_code" })
@@ -309,8 +309,10 @@ export async function GET(request: NextRequest) {
         // Fetch deals from Velocity
         const deals = await fetchBrokerDeals(broker);
 
-        // Sync deals
-        const syncResults = await Promise.all(deals.map(syncDeal));
+        // Sync deals with broker_id
+        const syncResults = await Promise.all(
+          deals.map((deal) => syncDeal(deal, broker.id))
+        );
         const successful = syncResults.filter((r) => r.success).length;
         const failed = syncResults.filter((r) => !r.success).length;
 
