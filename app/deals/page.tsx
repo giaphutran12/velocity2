@@ -86,13 +86,15 @@ export default async function DealsPage({ searchParams }: PageProps) {
     loan_code: string;
     status_code: number | null;
     date_created: string | null;
+    broker: { name: string } | null;
     borrowers: Array<{
       first_name: string | null;
       last_name: string | null;
       email: string | null;
       cell_phone: string | null;
     }>;
-  }> = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  }> = [] as any;
 
   if (q && q.trim()) {
     const searchTerm = q.trim();
@@ -106,6 +108,7 @@ export default async function DealsPage({ searchParams }: PageProps) {
         loan_code,
         status_code,
         date_created,
+        broker:vl_brokers(name),
         borrowers:vl_borrowers(
           first_name,
           last_name,
@@ -128,12 +131,14 @@ export default async function DealsPage({ searchParams }: PageProps) {
       .limit(50);
 
     if (!error && data) {
-      deals = data;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      deals = data as any;
     }
 
     // If no results from loan_code, search borrowers
     if (deals.length === 0) {
-      const { data: borrowerData } = await queryClient
+      // Build borrower query with broker filter FIRST (not after)
+      let borrowerQuery = queryClient
         .from("vl_borrowers")
         .select(
           `
@@ -141,18 +146,25 @@ export default async function DealsPage({ searchParams }: PageProps) {
           first_name,
           last_name,
           email,
-          cell_phone
+          cell_phone,
+          vl_deals!inner(broker_id)
         `
         )
         .or(
           `first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,cell_phone.ilike.%${searchTerm}%`
-        )
-        .limit(50);
+        );
+
+      // Filter by broker BEFORE querying (not after)
+      if (userIsAdmin && selectedBrokerId && selectedBrokerId !== "all") {
+        borrowerQuery = borrowerQuery.eq("vl_deals.broker_id", selectedBrokerId);
+      }
+
+      const { data: borrowerData } = await borrowerQuery.limit(50);
 
       if (borrowerData && borrowerData.length > 0) {
         const dealIds = [...new Set(borrowerData.map((b) => b.deal_id))];
 
-        let dealDataQuery = queryClient
+        const { data: dealData } = await queryClient
           .from("vl_deals")
           .select(
             `
@@ -160,6 +172,7 @@ export default async function DealsPage({ searchParams }: PageProps) {
             loan_code,
             status_code,
             date_created,
+            broker:vl_brokers(name),
             borrowers:vl_borrowers(
               first_name,
               last_name,
@@ -168,20 +181,47 @@ export default async function DealsPage({ searchParams }: PageProps) {
             )
           `
           )
-          .in("id", dealIds);
-
-        // If admin with selected broker, filter by broker_id
-        if (userIsAdmin && selectedBrokerId && selectedBrokerId !== "all") {
-          dealDataQuery = dealDataQuery.eq("broker_id", selectedBrokerId);
-        }
-
-        const { data: dealData } = await dealDataQuery
+          .in("id", dealIds)
           .order("date_created", { ascending: false });
 
         if (dealData) {
-          deals = dealData;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          deals = dealData as any;
         }
       }
+    }
+  } else {
+    // No search query - show recent deals by default
+    let recentDealsQuery = queryClient
+      .from("vl_deals")
+      .select(
+        `
+        id,
+        loan_code,
+        status_code,
+        date_created,
+        broker:vl_brokers(name),
+        borrowers:vl_borrowers(
+          first_name,
+          last_name,
+          email,
+          cell_phone
+        )
+      `
+      );
+
+    // Apply broker filter for admin
+    if (userIsAdmin && selectedBrokerId && selectedBrokerId !== "all") {
+      recentDealsQuery = recentDealsQuery.eq("broker_id", selectedBrokerId);
+    }
+
+    const { data } = await recentDealsQuery
+      .order("date_created", { ascending: false })
+      .limit(20);
+
+    if (data) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      deals = data as any;
     }
   }
 
@@ -247,116 +287,101 @@ export default async function DealsPage({ searchParams }: PageProps) {
             </form>
 
             {/* Results */}
-            {q && (
-              <div>
-                <p className="text-sm text-muted-foreground mb-4">
-                  {deals.length} result{deals.length !== 1 ? "s" : ""} for &quot;{q}&quot;
-                </p>
+            <div>
+              <p className="text-sm text-muted-foreground mb-4">
+                {q
+                  ? `${deals.length} result${deals.length !== 1 ? "s" : ""} for "${q}"`
+                  : `${deals.length} recent deal${deals.length !== 1 ? "s" : ""}`}
+              </p>
 
-                {deals.length > 0 ? (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Loan Code</TableHead>
-                        <TableHead>Borrower</TableHead>
-                        <TableHead>Contact</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead className="text-right">Action</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {deals.map((deal) => {
-                        const primaryBorrower = deal.borrowers?.[0];
-                        const name = primaryBorrower
-                          ? `${primaryBorrower.first_name || ""} ${primaryBorrower.last_name || ""}`.trim()
-                          : "—";
-                        const contact =
-                          primaryBorrower?.email ||
-                          primaryBorrower?.cell_phone ||
-                          "—";
-                        const date = deal.date_created
-                          ? new Date(deal.date_created).toLocaleDateString()
-                          : "—";
+              {deals.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Loan Code</TableHead>
+                      {userIsAdmin && (!selectedBrokerId || selectedBrokerId === "all") && (
+                        <TableHead>Owner</TableHead>
+                      )}
+                      <TableHead>Borrower</TableHead>
+                      <TableHead>Contact</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead className="text-right">Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {deals.map((deal) => {
+                      const primaryBorrower = deal.borrowers?.[0];
+                      const name = primaryBorrower
+                        ? `${primaryBorrower.first_name || ""} ${primaryBorrower.last_name || ""}`.trim()
+                        : "—";
+                      const contact =
+                        primaryBorrower?.email ||
+                        primaryBorrower?.cell_phone ||
+                        "—";
+                      const date = deal.date_created
+                        ? new Date(deal.date_created).toLocaleDateString()
+                        : "—";
+                      // Handle broker as array (Supabase returns array for joins)
+                      const brokerName = Array.isArray(deal.broker)
+                        ? deal.broker[0]?.name
+                        : deal.broker?.name;
 
-                        return (
-                          <TableRow key={deal.id}>
-                            <TableCell className="font-medium">
-                              {deal.loan_code}
-                            </TableCell>
-                            <TableCell>{name || "—"}</TableCell>
+                      return (
+                        <TableRow key={deal.id}>
+                          <TableCell className="font-medium">
+                            {deal.loan_code}
+                          </TableCell>
+                          {userIsAdmin && (!selectedBrokerId || selectedBrokerId === "all") && (
                             <TableCell className="text-muted-foreground">
-                              {contact}
+                              {brokerName || "—"}
                             </TableCell>
-                            <TableCell className="text-muted-foreground">
-                              {date}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <Link
-                                href={`/deals/${deal.loan_code}`}
-                                className="text-primary hover:underline font-medium"
-                              >
-                                View Proposal
-                              </Link>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                ) : (
-                  <Card className="border-dashed">
-                    <CardContent className="flex flex-col items-center justify-center py-12">
-                      <svg
-                        className="mx-auto h-12 w-12 text-muted-foreground"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                      <h3 className="mt-2 text-sm font-medium">
-                        No deals found
-                      </h3>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        Try a different search term
-                      </p>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            )}
-
-            {/* Empty state when no search */}
-            {!q && (
-              <Card className="border-dashed">
-                <CardContent className="flex flex-col items-center justify-center py-12">
-                  <svg
-                    className="mx-auto h-12 w-12 text-muted-foreground"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                    />
-                  </svg>
-                  <h3 className="mt-2 text-sm font-medium">
-                    Search for deals
-                  </h3>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Enter a loan code, borrower name, phone number, or email
-                  </p>
-                </CardContent>
-              </Card>
-            )}
+                          )}
+                          <TableCell>{name || "—"}</TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {contact}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {date}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Link
+                              href={`/deals/${deal.loan_code}`}
+                              className="text-primary hover:underline font-medium"
+                            >
+                              View Proposal
+                            </Link>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              ) : (
+                <Card className="border-dashed">
+                  <CardContent className="flex flex-col items-center justify-center py-12">
+                    <svg
+                      className="mx-auto h-12 w-12 text-muted-foreground"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    <h3 className="mt-2 text-sm font-medium">
+                      No deals found
+                    </h3>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {q ? "Try a different search term" : "No recent deals available"}
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>

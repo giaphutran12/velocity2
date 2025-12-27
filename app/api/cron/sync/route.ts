@@ -111,6 +111,13 @@ async function syncDeal(deal: VelocityDeal, brokerId: string): Promise<SyncResul
         const borrowerId = borrowerIdMap.get(i);
         if (!borrowerId) continue;
 
+        // Delete existing child records FIRST to prevent duplicates on re-sync
+        await supabase.from("vl_borrower_addresses").delete().eq("borrower_id", borrowerId);
+        await supabase.from("vl_borrower_employment").delete().eq("borrower_id", borrowerId);
+        await supabase.from("vl_borrower_liabilities").delete().eq("borrower_id", borrowerId);
+        await supabase.from("vl_borrower_assets").delete().eq("borrower_id", borrowerId);
+        await supabase.from("vl_borrower_properties").delete().eq("borrower_id", borrowerId);
+
         const addressRows = transformBorrowerAddresses(borrowerId, borrower);
         if (addressRows.length) {
           const { error } = await supabase.from("vl_borrower_addresses").insert(addressRows);

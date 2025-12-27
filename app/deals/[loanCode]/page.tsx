@@ -22,7 +22,7 @@ export default async function DealDetailPage({ params }: PageProps) {
   const userIsAdmin = await isAdmin(user.email);
   const queryClient = userIsAdmin ? await createAdminClient() : supabase;
 
-  // Fetch deal with all relations in one query
+  // Fetch deal with borrowers and liabilities (separate from mortgage_request to avoid Cartesian product)
   const { data: deal, error } = await queryClient
     .from("vl_deals")
     .select(
@@ -31,8 +31,7 @@ export default async function DealDetailPage({ params }: PageProps) {
       borrowers:vl_borrowers(
         *,
         liabilities:vl_borrower_liabilities(*)
-      ),
-      mortgage_request:vl_mortgage_requests(*)
+      )
     `
     )
     .eq("loan_code", loanCode)
@@ -41,6 +40,13 @@ export default async function DealDetailPage({ params }: PageProps) {
   if (error || !deal) {
     notFound();
   }
+
+  // Fetch mortgage request separately to avoid duplicate liabilities
+  const { data: mortgageRequestData } = await queryClient
+    .from("vl_mortgage_requests")
+    .select("*")
+    .eq("deal_id", deal.id)
+    .single();
 
   // Get primary borrower (index 0)
   const primaryBorrower = deal.borrowers?.find(
@@ -70,8 +76,8 @@ export default async function DealDetailPage({ params }: PageProps) {
         }))
     ) || [];
 
-  // Get mortgage request data
-  const mortgageRequest = deal.mortgage_request;
+  // Get mortgage request data (from separate query)
+  const mortgageRequest = mortgageRequestData;
   const initialRate = mortgageRequest?.rate || 4.5;
   const initialTermMonths = mortgageRequest?.term_in_months || 24;
   const initialAmortizationMonths =
