@@ -9,6 +9,13 @@
 - **NEVER read .env files** - environment variables are private
 - Use parallel agents whenever it makes sense to speed up the process, save main agent context window, but don't deploy 10 agents for 2 small todos in the code base (you know what im saying)
 
+## UI Components (shadcn/ui)
+
+- **ALWAYS use shadcn/ui components** for UI elements - they're in `components/ui/`
+- Available: Button, Input, Card, Table, Badge, Dialog, Label, Skeleton, Tabs, etc.
+- Import from `@/components/ui/button`, `@/components/ui/input`, etc.
+- Use shadcn patterns over custom Tailwind when a component exists
+
 ## Communication (User = Junior Dev)
 
 - Always include **file path + line number**
