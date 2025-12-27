@@ -1,0 +1,28 @@
+{
+  "id": "H2",
+  "title": "JSONB Storage with PostgreSQL Views",
+  "kind": "system",
+  "scope": "Minimal schema + computed views",
+  "approach": "Radical",
+  "status": "L0_CONDITIONAL",
+  "deduction_result": "conditional",
+  "conditions_needed": ["Proof that views perform acceptably at 20k rows with JOINs", "Team accepts no data validation at insert"],
+  "content": {
+    "method": [
+      "Create single vl_deals_raw table with JSONB column storing full API response",
+      "Create PostgreSQL views that extract nested data (v_borrowers, v_liabilities, etc.)",
+      "Use JSONB path queries for ad-hoc analysis",
+      "Simple sync: just upsert the raw JSON by loan_code",
+      "Create GIN indexes on commonly queried JSONB paths"
+    ],
+    "expected_outcome": "Flexible schema that adapts to API changes without migrations"
+  },
+  "rationale": {
+    "anomaly": "Velocity API returns deeply nested JSON that needs to be queryable for proposal generation",
+    "approach": "Leverage PostgreSQL's native JSONB capabilities - schema-on-read",
+    "pros": ["Zero transformer code", "API changes don't break sync", "Fast to implement"],
+    "cons": ["No FK constraints", "Views can be slow on large datasets", "Less type safety"],
+    "alternatives_rejected": []
+  },
+  "created_at": "2024-12-23T16:35:00Z"
+}

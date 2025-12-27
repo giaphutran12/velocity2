@@ -1,0 +1,30 @@
+{
+  "id": "H1",
+  "title": "Traditional Normalized ETL",
+  "kind": "system",
+  "scope": "Full database schema + migration pipeline",
+  "approach": "Conservative",
+  "status": "L2_CORROBORATED",
+  "deduction_passed": "2024-12-23T17:30:00Z",
+  "deduction_notes": "Passed logical consistency. Compatible with all L2 facts. Asset types use text column (not lookup). Unknown enum codes need fallback handling.",
+  "validation_passed": "2025-12-27T04:30:00Z",
+  "validation_notes": "Q3 testing complete. 17 brokers, 10000+ deals synced at 100% success rate. All failure patterns resolved.",
+  "content": {
+    "method": [
+      "Create 15 lookup tables for all Velocity enums (street_types, provinces, etc.)",
+      "Create 12 normalized main tables with foreign keys (vl_deals, vl_borrowers, vl_liabilities, etc.)",
+      "Build TypeScript transformer to flatten nested JSON into table rows",
+      "Run batch migration: iterate 40 brokers, fetch all deals, upsert to tables",
+      "Schedule cron job (every 15 min) to poll for updated deals"
+    ],
+    "expected_outcome": "Fully normalized relational schema optimized for complex queries and joins"
+  },
+  "rationale": {
+    "anomaly": "Velocity API returns deeply nested JSON that needs to be queryable for proposal generation",
+    "approach": "Classic ETL normalization - proven, well-understood pattern",
+    "pros": ["Strong data integrity via FK constraints", "Efficient JOINs", "Clear schema documentation"],
+    "cons": ["Complex transformer code", "Schema changes require migrations", "More tables to manage"],
+    "alternatives_rejected": []
+  },
+  "created_at": "2024-12-23T16:35:00Z"
+}

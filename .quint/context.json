@@ -1,0 +1,77 @@
+{
+  "bounded_context": {
+    "name": "Velocity Data Centralization",
+    "domain": "Mortgage Brokerage Data Management",
+    "session_id": "velocity-migration-2024-12-23",
+    "created_at": "2024-12-23T16:30:00Z"
+  },
+  "vocabulary": {
+    "Deal": "A mortgage application/loan tracked in Velocity, identified by loanCode (e.g., VBLUE-112650)",
+    "Borrower": "An individual applying for a mortgage, with credit history, employment, and liabilities",
+    "Velocity (VL)": "Newton's mortgage broker CRM system with REST API at api-velocity.newton.ca",
+    "Supabase (SP)": "Target PostgreSQL database for centralized data storage",
+    "Salesforce (SF)": "Existing CRM (out of scope for this session)",
+    "Subject Property": "The property being mortgaged/purchased",
+    "Liability": "Existing debts (credit cards, loans) that affect borrower qualification",
+    "Broker": "Mortgage agent with unique API key to access their deals in Velocity",
+    "HOLP": "Home Ownership Lending Proposal - PDF document generated for customers",
+    "LTV": "Loan-to-Value ratio - mortgage amount / property value"
+  },
+  "invariants": [
+    "Must use Supabase PostgreSQL as target database",
+    "Must use TypeScript/Node.js for sync scripts",
+    "Each broker can only access their own deals via their API key",
+    "Velocity API enums must be stored in lookup tables with code->name mapping",
+    "loan_code is the unique identifier for deals (use for upsert)",
+    "All tables prefixed with 'vl_' to distinguish from future SF tables",
+    "Never read .env files directly - use environment variables",
+    "Data must support efficient querying for proposal generation"
+  ],
+  "data_sources": {
+    "velocity_api": {
+      "base_url": "https://api-velocity.newton.ca/api/forms",
+      "auth": "API key per broker (40 brokers in CSV)",
+      "endpoints": {
+        "get_deals": "/v1/deals?apikey={key}&loancode={code}"
+      }
+    },
+    "broker_keys": "env_Variables__c-12_8_2025.csv (40 API keys)"
+  },
+  "target_schema": {
+    "lookup_tables": 15,
+    "main_tables": 12,
+    "primary_entity": "vl_deals"
+  },
+  "goals": [
+    "Create database schema in Supabase for Velocity data",
+    "Migrate all deals from 40 brokers",
+    "Enable continuous sync for new/updated deals",
+    "Support proposal PDF generation from centralized data",
+    "Enable future features like property equity watchers"
+  ],
+  "phase": "Q5_DECISION_COMPLETE",
+  "phase_transitions": [
+    {"from": "Q0_INIT", "to": "Q1_ABDUCTION", "timestamp": "2024-12-23T16:30:00Z", "trigger": "/q1-hypothesize"},
+    {"from": "Q1_ABDUCTION", "to": "Q2_DEDUCTION_COMPLETE", "timestamp": "2024-12-23T17:30:00Z", "trigger": "/q2-check"},
+    {"from": "Q2_DEDUCTION_COMPLETE", "to": "Q3_TESTING", "timestamp": "2024-12-27T00:30:00Z", "trigger": "migrations applied, sync API created"},
+    {"from": "Q3_TESTING", "to": "Q4_AUDIT", "timestamp": "2025-12-27T04:30:00Z", "trigger": "100% sync success, H1 promoted to L2"},
+    {"from": "Q4_AUDIT", "to": "Q5_DECISION_COMPLETE", "timestamp": "2025-12-27T04:45:00Z", "trigger": "DRR created, H1 accepted"}
+  ],
+  "decision": {
+    "id": "D1",
+    "title": "Use Traditional Normalized ETL",
+    "winner": "H1",
+    "r_eff": 0.90,
+    "status": "ACCEPTED"
+  },
+  "hypotheses": [
+    {"id": "H1", "title": "Traditional Normalized ETL", "approach": "Conservative", "status": "L2_CORROBORATED", "deduction": "PASS", "validation": "PASS"},
+    {"id": "H2", "title": "JSONB Storage with Views", "approach": "Radical", "status": "L0_CONDITIONAL", "deduction": "CONDITIONAL"},
+    {"id": "H3", "title": "Hybrid: Core Normalized + JSONB", "approach": "Moderate", "status": "L0_CONDITIONAL", "deduction": "CONDITIONAL"},
+    {"id": "H4", "title": "Supabase Edge Functions + Realtime", "approach": "Progressive", "status": "INVALID", "deduction": "FAIL"}
+  ],
+  "evidence": [
+    {"id": "E1", "title": "Velocity API Data Structure Analysis", "supports": "H1", "congruence": "CL3"},
+    {"id": "E2", "title": "Q3 Full Sync Validation", "supports": "H1", "congruence": "CL3"}
+  ]
+}

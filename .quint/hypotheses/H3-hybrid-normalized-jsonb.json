@@ -1,0 +1,28 @@
+{
+  "id": "H3",
+  "title": "Hybrid: Core Normalized + JSONB for Nested",
+  "kind": "system",
+  "scope": "Primary entities normalized, child arrays as JSONB",
+  "approach": "Moderate",
+  "status": "L0_CONDITIONAL",
+  "deduction_result": "conditional",
+  "conditions_needed": ["Team accepts mixed normalized+JSONB query paradigm", "Proposal generation queries tested with JSONB extraction"],
+  "content": {
+    "method": [
+      "Normalize core entities: vl_deals, vl_borrowers, vl_subject_properties, vl_mortgage_requests",
+      "Store nested arrays as JSONB columns: borrower.liabilities[], borrower.assets[], deal.notes[]",
+      "Create lookup tables only for frequently queried enums (deal_statuses, provinces)",
+      "Build lightweight transformer for core tables, pass-through for JSONB",
+      "Add JSONB indexes for common query patterns"
+    ],
+    "expected_outcome": "Balance of query performance on core data with flexibility for nested details"
+  },
+  "rationale": {
+    "anomaly": "Velocity API returns deeply nested JSON that needs to be queryable for proposal generation",
+    "approach": "Normalize what matters (deals, borrowers), keep flexibility for details",
+    "pros": ["Less code than full normalization", "Core queries are fast", "Nested data stays flexible"],
+    "cons": ["Mixed paradigm may confuse", "Still need some transformation logic"],
+    "alternatives_rejected": []
+  },
+  "created_at": "2024-12-23T16:35:00Z"
+}

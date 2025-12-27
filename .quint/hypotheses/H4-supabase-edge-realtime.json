@@ -1,0 +1,28 @@
+{
+  "id": "H4",
+  "title": "Supabase Edge Functions + Realtime Sync",
+  "kind": "system",
+  "scope": "Serverless architecture on Supabase platform",
+  "approach": "Progressive",
+  "status": "INVALID",
+  "invalidated": "2024-12-23T17:30:00Z",
+  "invalidation_reason": "Webhook capability does not exist in Velocity API. Without webhooks, H4 reduces to H1 but with plpgsql instead of TypeScript - strictly worse.",
+  "content": {
+    "method": [
+      "Deploy Supabase Edge Function to handle Velocity webhook callbacks (if available)",
+      "If no webhooks: Edge Function triggered by pg_cron for scheduled polling",
+      "Use Supabase's built-in Database Functions for transformation (plpgsql)",
+      "Leverage Supabase Realtime for downstream notifications when deals change",
+      "Store in normalized tables but use Supabase's auto-generated TypeScript types"
+    ],
+    "expected_outcome": "Fully managed, serverless sync pipeline native to Supabase ecosystem"
+  },
+  "rationale": {
+    "anomaly": "Velocity API returns deeply nested JSON that needs to be queryable for proposal generation",
+    "approach": "Go all-in on Supabase platform capabilities",
+    "pros": ["No external infra to manage", "Built-in types from schema", "Realtime capabilities"],
+    "cons": ["Edge Function cold starts", "Vendor lock-in", "Less control over sync logic"],
+    "alternatives_rejected": []
+  },
+  "created_at": "2024-12-23T16:35:00Z"
+}

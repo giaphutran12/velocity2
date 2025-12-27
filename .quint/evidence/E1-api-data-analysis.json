@@ -1,0 +1,55 @@
+{
+  "id": "E1",
+  "title": "Velocity API Data Structure Analysis",
+  "type": "empirical",
+  "created_at": "2024-12-23T16:50:00Z",
+  "hypothesis_supported": "H1",
+  "findings": {
+    "total_deals_sampled": {
+      "garry_singh_2025": 54,
+      "stephanie_viaje_2025": 452,
+      "note": "Large datasets confirm chunked transfer works"
+    },
+    "deal_status_distribution": {
+      "1_new": 6,
+      "2_submitted": 8,
+      "3_approved": 1,
+      "4_accepted": 1,
+      "6_funded": 1,
+      "7_complete": 20,
+      "8_parked": 14,
+      "10_declined": 3
+    },
+    "liability_types_found": [2, 3, 4, 7, 9, 10, 11, 13, 14],
+    "liability_types_inferred": {
+      "2": "Credit Card",
+      "3": "Personal Loan",
+      "4": "Auto Loan",
+      "7": "Student Loan",
+      "9": "Collections",
+      "10": "Line of Credit",
+      "11": "Tax Debt (CRA)",
+      "13": "Unsecured LOC",
+      "14": "Auto Lease"
+    },
+    "asset_types_found": [
+      "Chequing Account", "Gift", "Household Goods",
+      "Life Insurance", "Mutual Fund/Stock/Bonds",
+      "Other", "RRSP", "Savings", "Vehicle"
+    ],
+    "data_quality_issues": [
+      "Some liabilities have null typeId",
+      "Trailing whitespace in some names",
+      "Duplicate liabilities within same borrower (different credit pulls?)"
+    ]
+  },
+  "sample_files": [
+    "samples/all-deals-2025.json",
+    "samples/completed-deals-status7.json",
+    "samples/declined-deals-status10.json",
+    "samples/new-deals-status1.json",
+    "samples/stephanie-viaje-deals-2025.json",
+    "samples/inferred-liability-types.json"
+  ],
+  "conclusion": "H1 (Normalized ETL) is viable. Data structure is consistent across brokers and statuses. Lookup tables needed for: deal_statuses, liability_types, asset_types, street_types, provinces, countries, income_types, income_periods, rate_types, payment_frequencies."
+}

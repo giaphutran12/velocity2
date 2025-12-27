@@ -1,0 +1,285 @@
+{
+  "timestamp": "2025-12-27T00:58:55.015Z",
+  "dryRun": false,
+  "brokerCount": 39,
+  "totalDealsFound": 11659,
+  "totalDealsSynced": 11398,
+  "totalDealsFailed": 261,
+  "brokerErrors": 0,
+  "durationMs": 846273,
+  "results": [
+    {
+      "broker": "Megan Robertson",
+      "dealsFound": 24,
+      "dealsSynced": 24,
+      "dealsFailed": 0,
+      "duration": 5568
+    },
+    {
+      "broker": "Natalie Pacheco",
+      "dealsFound": 10,
+      "dealsSynced": 10,
+      "dealsFailed": 0,
+      "duration": 3988
+    },
+    {
+      "broker": "Salil Singla",
+      "dealsFound": 9,
+      "dealsSynced": 9,
+      "dealsFailed": 0,
+      "duration": 4710
+    },
+    {
+      "broker": "Serg Martires",
+      "dealsFound": 22,
+      "dealsSynced": 22,
+      "dealsFailed": 0,
+      "duration": 4183
+    },
+    {
+      "broker": "Gurpreet Kaur",
+      "dealsFound": 50,
+      "dealsSynced": 49,
+      "dealsFailed": 1,
+      "duration": 4811
+    },
+    {
+      "broker": "Shiela Jamero",
+      "dealsFound": 20,
+      "dealsSynced": 20,
+      "dealsFailed": 0,
+      "duration": 5006
+    },
+    {
+      "broker": "Mindy Basran",
+      "dealsFound": 22,
+      "dealsSynced": 22,
+      "dealsFailed": 0,
+      "duration": 4504
+    },
+    {
+      "broker": "Doyle Minhas",
+      "dealsFound": 41,
+      "dealsSynced": 41,
+      "dealsFailed": 0,
+      "duration": 4457
+    },
+    {
+      "broker": "Garry Singh",
+      "dealsFound": 52,
+      "dealsSynced": 52,
+      "dealsFailed": 0,
+      "duration": 6050
+    },
+    {
+      "broker": "Saihaj Cheema",
+      "dealsFound": 61,
+      "dealsSynced": 59,
+      "dealsFailed": 2,
+      "duration": 5709
+    },
+    {
+      "broker": "Amanda Weeks",
+      "dealsFound": 0,
+      "dealsSynced": 0,
+      "dealsFailed": 0,
+      "duration": 1238
+    },
+    {
+      "broker": "Nazneen Nasir Khan",
+      "dealsFound": 0,
+      "dealsSynced": 0,
+      "dealsFailed": 0,
+      "duration": 586
+    },
+    {
+      "broker": "Pina Cundari",
+      "dealsFound": 0,
+      "dealsSynced": 0,
+      "dealsFailed": 0,
+      "duration": 558
+    },
+    {
+      "broker": "Riley Morrison",
+      "dealsFound": 169,
+      "dealsSynced": 103,
+      "dealsFailed": 66,
+      "duration": 9990
+    },
+    {
+      "broker": "Jayashree Venkatachalam",
+      "dealsFound": 0,
+      "dealsSynced": 0,
+      "dealsFailed": 0,
+      "duration": 1147
+    },
+    {
+      "broker": "Shawn Cantwell",
+      "dealsFound": 0,
+      "dealsSynced": 0,
+      "dealsFailed": 0,
+      "duration": 607
+    },
+    {
+      "broker": "Karen John",
+      "dealsFound": 0,
+      "dealsSynced": 0,
+      "dealsFailed": 0,
+      "duration": 598
+    },
+    {
+      "broker": "Kam Virdi",
+      "dealsFound": 0,
+      "dealsSynced": 0,
+      "dealsFailed": 0,
+      "duration": 607
+    },
+    {
+      "broker": "Patrick Khouri",
+      "dealsFound": 0,
+      "dealsSynced": 0,
+      "dealsFailed": 0,
+      "duration": 568
+    },
+    {
+      "broker": "Renzo Mesia",
+      "dealsFound": 52,
+      "dealsSynced": 50,
+      "dealsFailed": 2,
+      "duration": 6578
+    },
+    {
+      "broker": "Ranier Manding",
+      "dealsFound": 282,
+      "dealsSynced": 282,
+      "dealsFailed": 0,
+      "duration": 16751
+    },
+    {
+      "broker": "Karny Mehat",
+      "dealsFound": 482,
+      "dealsSynced": 482,
+      "dealsFailed": 0,
+      "duration": 28667
+    },
+    {
+      "broker": "Valerie Roy",
+      "dealsFound": 489,
+      "dealsSynced": 486,
+      "dealsFailed": 3,
+      "duration": 26771
+    },
+    {
+      "broker": "Jennifer Souvanvong",
+      "dealsFound": 1198,
+      "dealsSynced": 1180,
+      "dealsFailed": 18,
+      "duration": 73406
+    },
+    {
+      "broker": "Sunny Dhillon",
+      "dealsFound": 1498,
+      "dealsSynced": 1481,
+      "dealsFailed": 17,
+      "duration": 88507
+    },
+    {
+      "broker": "Bowie Nan",
+      "dealsFound": 412,
+      "dealsSynced": 409,
+      "dealsFailed": 3,
+      "duration": 28259
+    },
+    {
+      "broker": "Gurjit Sandhu",
+      "dealsFound": 63,
+      "dealsSynced": 59,
+      "dealsFailed": 4,
+      "duration": 6049
+    },
+    {
+      "broker": "Keenan Marshall",
+      "dealsFound": 0,
+      "dealsSynced": 0,
+      "dealsFailed": 0,
+      "duration": 1103
+    },
+    {
+      "broker": "Lesly Camaclang",
+      "dealsFound": 663,
+      "dealsSynced": 657,
+      "dealsFailed": 6,
+      "duration": 46981
+    },
+    {
+      "broker": "Rani Mallhi",
+      "dealsFound": 160,
+      "dealsSynced": 154,
+      "dealsFailed": 6,
+      "duration": 13178
+    },
+    {
+      "broker": "Nav Cheema",
+      "dealsFound": 1415,
+      "dealsSynced": 1349,
+      "dealsFailed": 66,
+      "duration": 81525
+    },
+    {
+      "broker": "Olaf Durkowski",
+      "dealsFound": 128,
+      "dealsSynced": 126,
+      "dealsFailed": 2,
+      "duration": 9360
+    },
+    {
+      "broker": "Shaneen Mohammed",
+      "dealsFound": 596,
+      "dealsSynced": 561,
+      "dealsFailed": 35,
+      "duration": 42941
+    },
+    {
+      "broker": "Prem Hoonjan",
+      "dealsFound": 0,
+      "dealsSynced": 0,
+      "dealsFailed": 0,
+      "duration": 1434
+    },
+    {
+      "broker": "Stephanie Viaje",
+      "dealsFound": 1109,
+      "dealsSynced": 1088,
+      "dealsFailed": 21,
+      "duration": 70487
+    },
+    {
+      "broker": "Brandon Viaje-Roque",
+      "dealsFound": 415,
+      "dealsSynced": 415,
+      "dealsFailed": 0,
+      "duration": 25257
+    },
+    {
+      "broker": "Alika Walia",
+      "dealsFound": 748,
+      "dealsSynced": 747,
+      "dealsFailed": 1,
+      "duration": 53708
+    },
+    {
+      "broker": "Brendan Wilson",
+      "dealsFound": 307,
+      "dealsSynced": 307,
+      "dealsFailed": 0,
+      "duration": 22063
+    },
+    {
+      "broker": "Charlene Smith",
+      "dealsFound": 1162,
+      "dealsSynced": 1154,
+      "dealsFailed": 8,
+      "duration": 119344
+    }
+  ]
+}

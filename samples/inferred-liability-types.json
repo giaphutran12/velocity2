@@ -1,0 +1,46 @@
+{
+  "source": "Inferred from actual Velocity API data - NOT official documentation",
+  "liability_types": {
+    "2": {
+      "name": "Credit Card",
+      "examples": ["VISA", "MASTERCARD", "AMEX", "CANADIAN TIRE BANK", "CAPITAL ONE"]
+    },
+    "3": {
+      "name": "Personal Loan / Installment",
+      "examples": ["EASYFINANCIAL", "FAIRSTONE", "FINANCEIT", "SPRING FINANCIAL", "Telecom collections"]
+    },
+    "4": {
+      "name": "Auto Loan",
+      "examples": ["NISSAN CAN FINANCE", "TOYOTA CREDIT CANADA", "BMW GROUP FIN", "SANTANDER CONSUMER"]
+    },
+    "7": {
+      "name": "Student Loan",
+      "examples": ["ALBERTA STUDENT LOAN", "CDA STUDENT LOANS PR", "GOVERNMENT STUDENT LOANS"]
+    },
+    "9": {
+      "name": "Collections / Secured Debt",
+      "examples": ["Collections", "Secured on title", "CERB", "CRA debts"]
+    },
+    "10": {
+      "name": "Line of Credit",
+      "examples": ["BMO", "TDCT TR", "CIBC", "SCOTIALINE", "VANCITY"]
+    },
+    "11": {
+      "name": "Government / Tax Debt",
+      "examples": ["CRA", "CRA Income Tax"]
+    },
+    "13": {
+      "name": "Unsecured Line of Credit",
+      "examples": ["SCOTIALINE", "Fora"]
+    },
+    "14": {
+      "name": "Auto Lease",
+      "examples": ["MERCEDES BENZ FINSER", "TOYOTA CREDIT CANADA", "HONDA FINANCE", "KIA MOTOR FINANCE", "TRANSCAN LEASING"]
+    }
+  },
+  "notes": [
+    "null typeId appears for some entries - data quality issue in source",
+    "typeId 1, 5, 6, 8, 12 not observed in sampled data",
+    "Some lenders appear under multiple types (TOYOTA - both loan and lease)"
+  ]
+}
