@@ -1,8 +1,18 @@
 {
   "mcpServers": {
+    "quint-code": {
+      "command": "/Users/edwardtran/.local/bin/quint-code",
+      "args": [
+        "serve"
+      ],
+      "cwd": "/Users/edwardtran/BLI/velocity-project-fr",
+      "env": {
+        "QUINT_PROJECT_ROOT": "/Users/edwardtran/BLI/velocity-project-fr"
+      }
+    },
     "supabase": {
-      "type": "http",
-      "url": "https://mcp.supabase.com/mcp?project_ref=gustktuqfwekzkxldevk"
+      "command": "",
+      "args": null
     }
   }
 }

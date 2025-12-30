@@ -15,7 +15,16 @@
     "Liability": "Existing debts (credit cards, loans) that affect borrower qualification",
     "Broker": "Mortgage agent with unique API key to access their deals in Velocity",
     "HOLP": "Home Ownership Lending Proposal - PDF document generated for customers",
-    "LTV": "Loan-to-Value ratio - mortgage amount / property value"
+    "LTV": "Loan-to-Value ratio - mortgage amount / property value",
+    "RingCentral (RC)": "VoIP/communications platform providing call recordings and AI insights via RingSense API",
+    "Call Recording": "Audio recording of broker-client phone calls with metadata (duration, direction, participants)",
+    "RingSense": "RingCentral's AI-powered conversation intelligence API providing transcripts, summaries, and insights",
+    "sourceRecordId": "Unique identifier for a call recording in RingCentral domain",
+    "sourceSessionId": "Session identifier grouping related call recordings",
+    "speakerInfo": "Array of call participants with speaker diarization data",
+    "Transcript": "Full text of the conversation with speaker attribution and timestamps",
+    "AIScore": "Quality metrics for the call (talk-to-listen ratio, pace, questions asked)",
+    "domain": "RingCentral product origin: pbx, rcv (video), rcx, nice-incontact, ms-teams"
   },
   "invariants": [
     "Must use Supabase PostgreSQL as target database",
@@ -25,7 +34,12 @@
     "loan_code is the unique identifier for deals (use for upsert)",
     "All tables prefixed with 'vl_' to distinguish from future SF tables",
     "Never read .env files directly - use environment variables",
-    "Data must support efficient querying for proposal generation"
+    "Data must support efficient querying for proposal generation",
+    "RingCentral tables prefixed with 'rc_' to distinguish from VL/SF tables",
+    "sourceRecordId is the unique identifier for call recordings (use for upsert)",
+    "Insights arrays (Transcript, Summary, etc.) may be stored as JSONB for flexibility",
+    "Call recordings must be linkable to brokers via ownerExtensionId",
+    "RC calls should be linkable to VL deals/borrowers (via phone number or manual link) for unified analysis"
   ],
   "data_sources": {
     "velocity_api": {
@@ -35,7 +49,17 @@
         "get_deals": "/v1/deals?apikey={key}&loancode={code}"
       }
     },
-    "broker_keys": "env_Variables__c-12_8_2025.csv (40 API keys)"
+    "broker_keys": "env_Variables__c-12_8_2025.csv (40 API keys)",
+    "ringcentral_api": {
+      "base_url": "https://platform.ringcentral.com",
+      "auth": "OAuth 2.0 (JWT or Authorization Code flow)",
+      "endpoints": {
+        "get_recording_insights": "/ai/ringsense/v1/public/accounts/{accountId}/domains/{domain}/records/{sourceRecordId}/insights",
+        "get_session_insights": "/ai/ringsense/v1/public/accounts/{accountId}/domains/{domain}/sessions/{sourceSessionId}/insights"
+      },
+      "domains": ["pbx", "rcv", "rcx", "nice-incontact", "ms-teams"],
+      "insight_types": ["Transcript", "Summary", "Highlights", "NextSteps", "BulletedSummary", "AIScore", "CallNotes"]
+    }
   },
   "target_schema": {
     "lookup_tables": 15,
@@ -47,8 +71,16 @@
     "Migrate all deals from 40 brokers",
     "Enable continuous sync for new/updated deals",
     "Support proposal PDF generation from centralized data",
-    "Enable future features like property equity watchers"
+    "Enable future features like property equity watchers",
+    "Migrate RingCentral call recordings and AI insights to Supabase",
+    "Enable broker call analytics and transcript search",
+    "[FUTURE] Integrate Salesforce (SF) data - sf_* tables (out of scope for D3)"
   ],
+  "data_centralization_roadmap": {
+    "phase_1": {"source": "Velocity (VL)", "prefix": "vl_", "status": "DONE"},
+    "phase_2": {"source": "RingCentral (RC)", "prefix": "rc_", "status": "IN_PROGRESS"},
+    "phase_3": {"source": "Salesforce (SF)", "prefix": "sf_", "status": "FUTURE - OUT OF SCOPE"}
+  },
   "phase": "Q5_DECISION_COMPLETE",
   "phase_transitions": [
     {"from": "Q0_INIT", "to": "Q1_ABDUCTION", "timestamp": "2024-12-23T16:30:00Z", "trigger": "/q1-hypothesize"},
@@ -56,7 +88,12 @@
     {"from": "Q2_DEDUCTION_COMPLETE", "to": "Q3_TESTING", "timestamp": "2024-12-27T00:30:00Z", "trigger": "migrations applied, sync API created"},
     {"from": "Q3_TESTING", "to": "Q4_AUDIT", "timestamp": "2025-12-27T04:30:00Z", "trigger": "100% sync success, H1 promoted to L2"},
     {"from": "Q4_AUDIT", "to": "Q5_DECISION_COMPLETE", "timestamp": "2025-12-27T04:45:00Z", "trigger": "DRR created, H1 accepted"},
-    {"from": "Q5_DECISION_COMPLETE", "to": "Q1_ABDUCTION", "timestamp": "2025-12-26T10:00:00Z", "trigger": "/q1-hypothesize for auth decision"}
+    {"from": "Q5_DECISION_COMPLETE", "to": "Q1_ABDUCTION", "timestamp": "2025-12-26T10:00:00Z", "trigger": "/q1-hypothesize for auth decision"},
+    {"from": "Q5_DECISION_COMPLETE", "to": "Q0_INIT", "timestamp": "2025-12-29T12:00:00Z", "trigger": "/q0-init for RingCentral migration D3"},
+    {"from": "Q0_INIT", "to": "Q1_ABDUCTION", "timestamp": "2025-12-29T12:30:00Z", "trigger": "/q1-hypothesize for D3 schema design"},
+    {"from": "Q3_INDUCTION", "to": "Q3_VALIDATION_COMPLETE", "timestamp": "2025-12-29T13:00:00Z", "trigger": "/q3-validate - H9 promoted to L2 via internal test"},
+    {"from": "Q3_VALIDATION_COMPLETE", "to": "Q4_AUDIT_COMPLETE", "timestamp": "2025-12-29T13:15:00Z", "trigger": "/q4-audit - H9 R_eff=0.85, no bias detected, ready for decision"},
+    {"from": "Q4_AUDIT_COMPLETE", "to": "Q5_DECISION_COMPLETE", "timestamp": "2025-12-29T13:30:00Z", "trigger": "/q5-decide - H9 accepted, DRR-D3 created"}
   ],
   "decisions": [
     {
@@ -72,13 +109,79 @@
       "winner": "H5",
       "r_eff": 0.95,
       "status": "ACCEPTED"
+    },
+    {
+      "id": "D3",
+      "title": "RingCentral Call Recording Schema",
+      "winner": "H9",
+      "r_eff": 0.85,
+      "status": "ACCEPTED",
+      "drr_file": ".quint/decisions/DRR-D3-ringcentral-schema.md"
     }
   ],
   "current_decision_space": {
-    "id": "D2",
-    "title": "Broker Authentication Library",
-    "anomaly": "No authentication - anyone can view any deal. Brokers use BluePearl emails (@bluepearlmortgage.ca, @bluepearl.ca)",
-    "status": "DECISION_COMPLETE"
+    "id": "D3",
+    "title": "RingCentral Call Recording Migration",
+    "anomaly": "Boss wants call recording data migrated from RingCentral to Supabase for broker call analytics",
+    "status": "Q1_ABDUCTION",
+    "boss_requirements": {
+      "save_all_info": true,
+      "diarized_transcript": "REQUIRED - speaker ID, name, role (agent/customer), timestamp, text",
+      "next_steps": "REQUIRED - action items with timestamps and speaker attribution",
+      "summary": "REQUIRED - overview text and customer objections",
+      "qa": "REQUIRED - questions asked during call",
+      "metrics": "REQUIRED - talk-to-listen ratio, talking speed (ppm), patience, questions time, frequency, sentiment",
+      "ai_coach": "REQUIRED - scoring insights (5 criteria), overall assessment",
+      "in_call_notes": "REQUIRED - recap bullets, tasks list",
+      "admin_account": "RingCentral admin activation received",
+      "goal": "Centralize all data (Velocity deals + RingCentral calls) into one DB for unified analysis",
+      "analysis_use_cases": [
+        "Contextualize call summaries based on previous calls",
+        "Link calls to deals/borrowers for full customer journey",
+        "Track broker performance via call metrics",
+        "Search transcripts across all calls",
+        "Identify patterns in successful vs unsuccessful deals"
+      ]
+    },
+    "payload_structure": {
+      "call_metadata": {
+        "fields": ["title", "rsRecordUri", "domain", "sourceRecordId", "sourceSessionId", "callDirection", "ownerExtensionId", "recordingDurationMs", "recordingStartTime", "creationTime", "lastModifiedTime"],
+        "source": "API response root"
+      },
+      "metrics": {
+        "fields": ["sentiment", "talkingSpeed_ppm", "talkRatio", "patience_sec", "questionsTime_sec", "frequency"],
+        "source": "Metrics panel in UI / API"
+      },
+      "speakers": {
+        "fields": ["speakerId", "name", "role"],
+        "source": "speakerInfo array"
+      },
+      "transcript": {
+        "fields": ["speakerId", "speakerName", "timestamp", "text"],
+        "source": "insights.Transcript array",
+        "note": "Diarized with speaker attribution"
+      },
+      "summary": {
+        "fields": ["overview", "customerObjections"],
+        "source": "insights.Summary"
+      },
+      "next_steps": {
+        "fields": ["speakerId", "timestamp", "actionItem"],
+        "source": "insights.NextSteps array"
+      },
+      "ai_coach": {
+        "fields": ["scoringInsights", "overallAssessment", "feedbackItems"],
+        "source": "AI Coach tab / Scoring Insights"
+      },
+      "in_call_notes": {
+        "fields": ["recap", "tasks"],
+        "source": "insights.CallNotes or In-Call Notes tab"
+      },
+      "qa": {
+        "fields": ["question", "answer", "timestamp"],
+        "source": "Q&A tab"
+      }
+    }
   },
   "hypotheses": [
     {"id": "H1", "title": "Traditional Normalized ETL", "approach": "Conservative", "status": "L2_CORROBORATED", "deduction": "PASS", "validation": "PASS", "decision": "D1"},
@@ -87,11 +190,26 @@
     {"id": "H4", "title": "Supabase Edge Functions + Realtime", "approach": "Progressive", "status": "INVALID", "deduction": "FAIL", "decision": "D1"},
     {"id": "H5", "title": "Supabase Auth with Email Domain Restriction", "approach": "Conservative", "status": "L2_ACCEPTED", "deduction": "PASS", "fv_score": 4, "r_eff": 0.95, "decision": "D2"},
     {"id": "H6", "title": "Better Auth with Supabase Adapter", "approach": "Progressive", "status": "L0_CONDITIONAL", "deduction": "CONDITIONAL", "fv_score": 2, "decision": "D2"},
-    {"id": "H7", "title": "Clerk Managed Auth", "approach": "Radical", "status": "INVALID", "deduction": "FAIL", "fv_score": 1, "decision": "D2"}
+    {"id": "H7", "title": "Clerk Managed Auth", "approach": "Radical", "status": "INVALID", "deduction": "FAIL", "fv_score": 1, "decision": "D2"},
+    {"id": "H8", "title": "Fully Normalized Schema", "approach": "Conservative", "status": "L0_CONDITIONAL", "decision": "D3", "tables": 7, "file": ".quint/hypotheses/H8_fully_normalized.md", "deduction": "REFINE", "deduction_notes": "Missing FTS spec for transcript search, VL link not specified", "fv_score": 3},
+    {"id": "H9", "title": "Hybrid - Core Normalized + JSONB Insights", "approach": "Moderate", "status": "L2_ACCEPTED", "decision": "D3", "tables": 1, "file": ".quint/hypotheses/H9_hybrid_jsonb.md", "deduction": "PASS", "deduction_notes": "Single table, FTS via dedicated column (populated by sync script), JSONB for flexible insights. Migration created: 20251229010000_create_rc_recordings.sql", "validation": "PASS", "validation_notes": "Migration applied, table created, indexes verified, sync endpoint responds", "audit": "PASS", "audit_notes": "R_eff=0.85, WLNK=external docs, no bias detected", "fv_score": 4, "r_eff": 0.85},
+    {"id": "H10", "title": "JSONB-First with Generated Columns", "approach": "Radical", "status": "INVALID", "decision": "D3", "tables": 1, "file": ".quint/hypotheses/H10_jsonb_first.md", "deduction": "FAIL", "deduction_notes": "INVALID: No FTS solution for transcript search - violates boss requirement", "fv_score": 2.5},
+    {"id": "H11", "title": "Transcript-Optimized with Full-Text Search", "approach": "Progressive", "status": "L0_CONDITIONAL", "decision": "D3", "tables": 3, "file": ".quint/hypotheses/H11_transcript_optimized.md", "deduction": "REFINE", "deduction_notes": "Over-engineered for uncertain scale, valid fallback if H9 FTS proves insufficient", "fv_score": 3.5}
   ],
   "evidence": [
     {"id": "E1", "title": "Velocity API Data Structure Analysis", "supports": "H1", "congruence": "CL3"},
     {"id": "E2", "title": "Q3 Full Sync Validation", "supports": "H1", "congruence": "CL3"},
-    {"id": "E3", "title": "Supabase Auth Docs - Email Domain Restriction", "supports": "H5", "congruence": "CL3"}
+    {"id": "E3", "title": "Supabase Auth Docs - Email Domain Restriction", "supports": "H5", "congruence": "CL3"},
+    {"id": "E4", "title": "RingCentral RingSense API Schema (Nia indexed)", "supports": "D3", "congruence": "CL3", "source": "https://developers.ringcentral.com/api-reference", "nia_source_id": "7993d571-09bd-4e76-bb75-89d080d9cbfd"},
+    {"id": "E5", "title": "Sample JSON Payload Screenshot", "supports": "D3", "congruence": "CL3", "source": "ringcentral-stuff/sample-json-payload.png"},
+    {"id": "E6", "title": "Call Details + Summary + Metrics UI", "supports": "D3", "congruence": "CL3", "source": "ringcentral-stuff/sample-call-details.png", "shows": ["overview", "customer_objections", "metrics_panel", "sentiment", "duration", "talk_speed", "talk_ratio"]},
+    {"id": "E7", "title": "Diarized Transcript UI", "supports": "D3", "congruence": "CL3", "source": "ringcentral-stuff/sample-transcript.png", "shows": ["speaker_id", "speaker_name", "timestamp", "utterance_text", "speaker_avatars"]},
+    {"id": "E8", "title": "Next Steps with Timestamps", "supports": "D3", "congruence": "CL3", "source": "ringcentral-stuff/sample-next-steps.png", "shows": ["action_items", "timestamps", "speaker_attribution"]},
+    {"id": "E9", "title": "AI Coach Scoring Insights", "supports": "D3", "congruence": "CL3", "source": "ringcentral-stuff/sample-ai-coach.png", "shows": ["scoring_criteria", "checkmarks", "overall_assessment"]},
+    {"id": "E10", "title": "In-Call Notes (Recap + Tasks)", "supports": "D3", "congruence": "CL3", "source": "ringcentral-stuff/sample-incall-notes.png", "shows": ["recap_bullets", "tasks_list"]},
+    {"id": "E11", "title": "JSONB GIN Index Performance Research", "supports": "H9", "congruence": "CL3", "type": "external-research", "file": ".quint/evidence/E11-jsonb-gin-performance.md", "finding": "GIN indexes provide 100x speedup for JSONB queries"},
+    {"id": "E12", "title": "PostgreSQL FTS Performance Research", "supports": "H9", "congruence": "CL3", "type": "external-research", "file": ".quint/evidence/E12-fts-performance.md", "finding": "FTS with GIN index achieves ~50ms query time"},
+    {"id": "E13", "title": "Hybrid Pattern Validation", "supports": "H9", "congruence": "CL3", "type": "external-research", "file": ".quint/evidence/E13-hybrid-pattern.md", "finding": "AWS recommends hybrid pattern for external API data"},
+    {"id": "E14", "title": "H9 Internal Validation", "supports": "H9", "congruence": "CL3", "type": "internal-test", "file": ".quint/evidence/E14-h9-internal-validation.md", "finding": "Migration applied, schema verified, sync endpoint responds", "date": "2025-12-29"}
   ]
 }
