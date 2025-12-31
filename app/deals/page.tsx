@@ -27,6 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import SignOutButton from "./_components/sign-out-button";
+import { RefreshDealsButton } from "./_components/refresh-deals-button";
 
 interface SearchParams {
   q?: string;
@@ -242,29 +243,33 @@ export default async function DealsPage({ searchParams }: PageProps) {
       <header className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           {userIsAdmin ? (
-            <form method="GET" className="flex items-center gap-3">
-              <span className="font-semibold text-primary">Admin View</span>
-              {q && <input type="hidden" name="q" value={q} />}
-              <Select name="broker_id" defaultValue={selectedBrokerId || "all"}>
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="All Brokers" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Brokers</SelectItem>
-                  {allBrokers.map((b) => (
-                    <SelectItem key={b.id} value={b.id}>
-                      {b.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button type="submit" variant="outline" size="sm">
-                Apply
-              </Button>
-            </form>
+            <div className="flex items-center gap-3">
+              <form method="GET" className="flex items-center gap-3">
+                <span className="font-semibold text-primary">Admin View</span>
+                {q && <input type="hidden" name="q" value={q} />}
+                <Select name="broker_id" defaultValue={selectedBrokerId || "all"}>
+                  <SelectTrigger className="w-50">
+                    <SelectValue placeholder="All Brokers" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Brokers</SelectItem>
+                    {allBrokers.map((b) => (
+                      <SelectItem key={b.id} value={b.id}>
+                        {b.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button type="submit" variant="outline" size="sm">
+                  Apply
+                </Button>
+              </form>
+              <RefreshDealsButton isAdmin={true} selectedBrokerId={selectedBrokerId} />
+            </div>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <span className="font-semibold">Welcome, {broker?.name}</span>
+              <RefreshDealsButton isAdmin={false} />
             </div>
           )}
           <SignOutButton />

@@ -53,6 +53,7 @@ async function fetchDealsForYear(broker: Broker, year: number): Promise<Velocity
     }
   }
 
+  console.log(`[CRON SYNC] ${broker.name} ${year}: fetched ${allDeals.length} deals`);
   return allDeals;
 }
 
@@ -67,7 +68,8 @@ async function fetchBrokerDeals(broker: Broker): Promise<VelocityDeal[]> {
       const yearDeals = await fetchDealsForYear(broker, year);
       allDeals.push(...yearDeals);
       await new Promise((r) => setTimeout(r, 100));
-    } catch {
+    } catch (error) {
+      console.error(`[CRON SYNC] ${broker.name} ${year}: failed -`, error);
       // Continue with other years
     }
   }
@@ -77,6 +79,8 @@ async function fetchBrokerDeals(broker: Broker): Promise<VelocityDeal[]> {
 
 // Main cron handler
 export async function GET(request: NextRequest) {
+  console.log("[CRON SYNC] Starting at", new Date().toISOString());
+
   // Verify cron secret (Vercel sends this header)
   const authHeader = request.headers.get("authorization");
   if (CRON_SECRET && authHeader !== `Bearer ${CRON_SECRET}`) {
@@ -98,11 +102,14 @@ export async function GET(request: NextRequest) {
     }
 
     if (!brokers || brokers.length === 0) {
+      console.log("[CRON SYNC] No active brokers found");
       return NextResponse.json({
         message: "No active brokers found",
         hint: "Add brokers to vl_brokers table or run migrate-brokers script",
       });
     }
+
+    console.log(`[CRON SYNC] Found ${brokers.length} active brokers:`, brokers.map(b => b.name));
 
     const results: {
       broker: string;
@@ -114,6 +121,7 @@ export async function GET(request: NextRequest) {
 
     // Process each broker
     for (const broker of brokers) {
+      console.log(`[CRON SYNC] Processing broker: ${broker.name}`);
       try {
         // Fetch deals from Velocity
         const deals = await fetchBrokerDeals(broker);
@@ -136,6 +144,7 @@ export async function GET(request: NextRequest) {
           })
           .eq("id", broker.id);
 
+        console.log(`[CRON SYNC] ${broker.name}: synced=${successful}, failed=${failed}`);
         results.push({
           broker: broker.name,
           dealsFound: deals.length,
@@ -144,6 +153,7 @@ export async function GET(request: NextRequest) {
         });
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : String(error);
+        console.error(`[CRON SYNC] ${broker.name} ERROR:`, errorMsg);
 
         // Update broker with error
         await supabase
@@ -171,6 +181,8 @@ export async function GET(request: NextRequest) {
     const duration = Date.now() - startTime;
     const totalSynced = results.reduce((sum, r) => sum + r.dealsSynced, 0);
     const totalFailed = results.reduce((sum, r) => sum + r.dealsFailed, 0);
+
+    console.log(`[CRON SYNC] Complete: ${totalSynced} synced, ${totalFailed} failed, ${duration}ms`);
 
     return NextResponse.json({
       message: `Cron sync complete`,

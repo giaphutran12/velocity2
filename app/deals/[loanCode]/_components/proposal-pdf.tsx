@@ -453,9 +453,7 @@ export function ProposalPDF({ data, logoBase64 }: ProposalPDFProps) {
 
         {/* Pain Section - Current Financial Burden */}
         <View style={styles.painSection} wrap={false}>
-          <Text style={styles.painTitle}>
-            ⚠️ Your Current Financial Burden
-          </Text>
+          <Text style={styles.painTitle}>⚠️ Your Current Financial Burden</Text>
           <View style={styles.painStatsGrid}>
             <View style={styles.painStat}>
               <Text style={styles.painStatLabel}>Total Debt Obligations</Text>
@@ -482,9 +480,9 @@ export function ProposalPDF({ data, logoBase64 }: ProposalPDFProps) {
         <View style={styles.section}>
           {/* Wrap title + solution box together to prevent page break between them */}
           <View wrap={false}>
-            <Text style={styles.sectionTitle}>
-              Your New Consolidated Mortgage - The Solution
-            </Text>
+            {/* <Text style={styles.sectionTitle}> */}
+            {/* Your New Consolidated Mortgage - The Solution
+            </Text> */}
 
             <View style={styles.proposedSolution}>
               <View style={styles.solutionGrid}>
@@ -537,7 +535,9 @@ export function ProposalPDF({ data, logoBase64 }: ProposalPDFProps) {
               </View>
               <View style={styles.detailItem}>
                 <Text style={styles.detailLabel}>APR</Text>
-                <Text style={styles.detailValue}>{formatPercent(data.apr)}</Text>
+                <Text style={styles.detailValue}>
+                  {formatPercent(data.apr)}
+                </Text>
               </View>
               <View style={styles.detailItem}>
                 <Text style={styles.detailLabel}>Total Interest</Text>
@@ -564,11 +564,14 @@ export function ProposalPDF({ data, logoBase64 }: ProposalPDFProps) {
           {/* Credit Warning Explanation */}
           <View style={styles.creditWarningBox} wrap={false}>
             <Text style={styles.creditWarningText}>
-              <Text style={styles.creditWarningBold}>⚠️ Credit Impact Notice: </Text>
-              Debts marked with the warning icon are factors that typically impact
-              credit scores. High credit card balances, missed payments, and accounts
-              in collections commonly affect credit ratings. By consolidating these
-              debts, you can improve your credit utilization over time.
+              <Text style={styles.creditWarningBold}>
+                ⚠️ Credit Impact Notice:{" "}
+              </Text>
+              Debts marked with the warning icon are factors that typically
+              impact credit scores. High credit card balances, missed payments,
+              and accounts in collections commonly affect credit ratings. By
+              consolidating these debts, you can improve your credit utilization
+              over time.
             </Text>
           </View>
 
