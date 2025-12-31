@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabase } from "@/lib/supabase";
-import { downloadRecordingAudio } from "@/lib/ringcentral";
+import { downloadRecordingAudio, RCRateLimitInfo } from "@/lib/ringcentral";
 
 /**
  * /api/cron/download-rc-audio - Download RC audio files to Supabase Storage
@@ -23,15 +23,61 @@ import { downloadRecordingAudio } from "@/lib/ringcentral";
  * # Download specific recording
  * curl -H "Authorization: Bearer $CRON_SECRET" \
  *   "http://localhost:3000/api/cron/download-rc-audio?recordId=abc123"
+ *
+ * # Download with date range (last 7 days)
+ * curl -H "Authorization: Bearer $CRON_SECRET" \
+ *   "http://localhost:3000/api/cron/download-rc-audio?days=7"
  * ```
  *
  * @param limit - Max records to process (default: 10)
+ * @param days - Only process recordings from last N days (default: 30)
  * @param recordId - Specific recording ID to download (optional)
  *
  * @returns JSON with download results
  */
 
 const CRON_SECRET = process.env.CRON_SECRET;
+
+/**
+ * Slugify broker name for filesystem-safe folder names
+ * "Garry Singh" → "garry-singh"
+ */
+function slugifyName(name: string): string {
+  return name.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+/**
+ * Format timestamp in Vancouver time (handles DST automatically)
+ * "2024-12-15T22:30:22Z" → "20241215-143022"
+ */
+function formatTimestamp(isoDate: string): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Vancouver",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).formatToParts(new Date(isoDate));
+  const get = (t: string) => parts.find((p) => p.type === t)?.value || "00";
+  return `${get("year")}${get("month")}${get("day")}-${get("hour")}${get("minute")}${get("second")}`;
+}
+
+/**
+ * Build storage path with broker folder and uniqueness suffix
+ * Returns: "garry-singh/20241215-143022-garry-singh-669043.mp3"
+ */
+function buildStoragePath(
+  brokerSlug: string,
+  timestamp: string,
+  sourceRecordId: string,
+  ext: string
+): string {
+  const shortHash = sourceRecordId.slice(-6);
+  return `${brokerSlug}/${timestamp}-${brokerSlug}-${shortHash}.${ext}`;
+}
 
 function getFileExtension(contentType: string): string {
   const map: Record<string, string> = {
@@ -45,6 +91,24 @@ function getFileExtension(contentType: string): string {
   return map[contentType] || "mp3";
 }
 
+function chunk<T>(arr: T[], size: number): T[][] {
+  return Array.from({ length: Math.ceil(arr.length / size) }, (_, i) =>
+    arr.slice(i * size, i * size + size)
+  );
+}
+
+const BATCH_SIZE = 2;
+const BATCH_DELAY_MS = 6000;
+
+type Recording = {
+  id: string;
+  source_record_id: string;
+  audio_content_uri: string | null;
+  title: string | null;
+  owner_extension_id: string | null;
+  recording_start_time: string | null;
+};
+
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
   if (CRON_SECRET && authHeader !== `Bearer ${CRON_SECRET}`) {
@@ -54,23 +118,38 @@ export async function GET(request: NextRequest) {
   const startTime = Date.now();
   const searchParams = request.nextUrl.searchParams;
   const limit = parseInt(searchParams.get("limit") || "10", 10);
+  const days = parseInt(searchParams.get("days") || "30", 10);
   const specificRecordId = searchParams.get("recordId");
+
+  // Calculate date range (align with sync-rc behavior)
+  const dateFrom = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
   const supabase = getSupabase();
 
   try {
-    // Get recordings that need audio downloaded
+    // Fetch broker extension mapping for file naming
+    const { data: brokers } = await supabase
+      .from("vl_brokers")
+      .select("rc_extension_id, name")
+      .not("rc_extension_id", "is", null);
+
+    const brokerMap = new Map<string, string>(
+      brokers?.map((b) => [b.rc_extension_id, b.name]) ?? []
+    );
+
+    // Get recordings that need audio downloaded (within date range)
     let query = supabase
       .from("rc_recordings")
-      .select("id, source_record_id, audio_content_uri, title")
+      .select("id, source_record_id, audio_content_uri, title, owner_extension_id, recording_start_time")
       .not("audio_content_uri", "is", null)
       .is("audio_storage_path", null)
+      .gte("recording_start_time", dateFrom)
       .limit(limit);
 
     if (specificRecordId) {
       query = supabase
         .from("rc_recordings")
-        .select("id, source_record_id, audio_content_uri, title")
+        .select("id, source_record_id, audio_content_uri, title, owner_extension_id, recording_start_time")
         .eq("id", specificRecordId);
     }
 
@@ -87,28 +166,51 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    console.log(`Downloading audio for ${recordings.length} recordings (sequential with rate limiting)`);
+    const batches = chunk(recordings, BATCH_SIZE);
+    console.log(`Downloading audio for ${recordings.length} recordings in ${batches.length} batches of ${BATCH_SIZE}`);
 
-    const results: Array<{ success: boolean; recordId: string; storagePath?: string; error?: string }> = [];
+    const results: Array<{ success: boolean; recordId: string; storagePath?: string; error?: string; rateLimit?: RCRateLimitInfo }> = [];
 
-    // Process sequentially to avoid rate limiting
-    for (const rec of recordings) {
+    // Process single recording
+    async function processRecording(rec: Recording) {
       try {
         if (!rec.audio_content_uri) {
-          results.push({ success: false, recordId: rec.source_record_id, error: "No audio URI" });
-          continue;
+          const errorMsg = "No audio URI";
+          await supabase.from("rc_recordings").update({ download_error: errorMsg }).eq("id", rec.id);
+          return { success: false, recordId: rec.source_record_id, error: errorMsg };
         }
 
-        // Download from RingCentral
-        const { data: audioData, contentType } = await downloadRecordingAudio(
+        const brokerName = rec.owner_extension_id
+          ? brokerMap.get(rec.owner_extension_id)
+          : null;
+
+        if (!brokerName) {
+          const errorMsg = `No broker mapping for extension ${rec.owner_extension_id}`;
+          console.error(`Skipping ${rec.source_record_id}: ${errorMsg}`);
+          await supabase.from("rc_recordings").update({ download_error: errorMsg }).eq("id", rec.id);
+          return { success: false, recordId: rec.source_record_id, error: errorMsg };
+        }
+
+        if (!rec.recording_start_time) {
+          const errorMsg = "No recording_start_time";
+          console.error(`Skipping ${rec.source_record_id}: ${errorMsg}`);
+          await supabase.from("rc_recordings").update({ download_error: errorMsg }).eq("id", rec.id);
+          return { success: false, recordId: rec.source_record_id, error: errorMsg };
+        }
+
+        const { data: audioData, contentType, rateLimit } = await downloadRecordingAudio(
           rec.audio_content_uri
         );
 
-        // Generate storage path
-        const ext = getFileExtension(contentType);
-        const storagePath = `${rec.source_record_id}.${ext}`;
+        if (rateLimit.group) {
+          console.log(`RC Rate Limit: group=${rateLimit.group} remaining=${rateLimit.remaining}/${rateLimit.limit}`);
+        }
 
-        // Upload to Supabase Storage
+        const ext = getFileExtension(contentType);
+        const brokerSlug = slugifyName(brokerName);
+        const timestamp = formatTimestamp(rec.recording_start_time);
+        const storagePath = buildStoragePath(brokerSlug, timestamp, rec.source_record_id, ext);
+
         const { error: uploadError } = await supabase.storage
           .from("rc-audio")
           .upload(storagePath, audioData, {
@@ -118,33 +220,48 @@ export async function GET(request: NextRequest) {
 
         if (uploadError) throw uploadError;
 
-        // Update database with storage path
         const { error: updateError } = await supabase
           .from("rc_recordings")
-          .update({ audio_storage_path: storagePath })
+          .update({ audio_storage_path: storagePath, download_error: null })
           .eq("id", rec.id);
 
         if (updateError) throw updateError;
 
-        results.push({ success: true, recordId: rec.source_record_id, storagePath });
-        console.log(`Downloaded ${results.length}/${recordings.length}: ${rec.source_record_id}`);
-
-        // Rate limiting: wait 1 second between downloads (RC has strict limits)
-        await new Promise((r) => setTimeout(r, 1000));
+        console.log(`Downloaded: ${storagePath}`);
+        return { success: true, recordId: rec.source_record_id, storagePath, rateLimit };
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : "Unknown error";
         console.error(`Failed ${rec.source_record_id}: ${errorMsg}`);
-        results.push({
-          success: false,
-          recordId: rec.source_record_id,
-          error: errorMsg,
-        });
+        await supabase.from("rc_recordings").update({ download_error: errorMsg }).eq("id", rec.id);
+        return { success: false, recordId: rec.source_record_id, error: errorMsg };
+      }
+    }
 
-        // If rate limited, wait longer before continuing
-        if (errorMsg.includes("429")) {
-          console.log("Rate limited, waiting 5 seconds...");
-          await new Promise((r) => setTimeout(r, 5000));
+    // Process in batches with delay between batches
+    for (let i = 0; i < batches.length; i++) {
+      const batch = batches[i];
+      console.log(`Processing batch ${i + 1}/${batches.length} (${batch.length} recordings)`);
+
+      const batchResults = await Promise.all(batch.map(processRecording));
+      results.push(...batchResults);
+
+      // Check rate limit status
+      const rateLimited = batchResults.some((r) => r.error?.includes("429"));
+      const lowestRemaining = Math.min(
+        ...batchResults.filter((r) => r.rateLimit?.remaining != null).map((r) => r.rateLimit!.remaining!)
+      );
+
+      // Wait between batches (longer if rate limited or running low)
+      if (i < batches.length - 1) {
+        let delay = BATCH_DELAY_MS;
+        if (rateLimited) {
+          delay = 65000; // 65 seconds - RC rate limit window is 60s
+          console.log("Rate limited (429), waiting 65s for window reset");
+        } else if (lowestRemaining <= 3) {
+          delay = 30000; // 30 seconds when running low
+          console.log(`Rate limit low (${lowestRemaining} remaining), waiting 30s`);
         }
+        await new Promise((r) => setTimeout(r, delay));
       }
     }
 

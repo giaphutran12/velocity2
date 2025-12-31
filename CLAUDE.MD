@@ -22,7 +22,6 @@
 - Always include **file path + line number**
 - Explain simple → technical. But do not overexplain
 - When user asks "how to" → give instructions, don't do it for them
-- DO NOT EVER READ .env file
 
 ## Nia MCP (PRIORITY)
 

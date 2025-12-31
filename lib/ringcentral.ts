@@ -272,19 +272,91 @@ export async function fetchRecordingsWithInsights(
   return recordingsWithInsights;
 }
 
+export interface RCRateLimitInfo {
+  group: string | null;
+  limit: number | null;
+  remaining: number | null;
+}
+
+export interface RCExtension {
+  id: string;
+  extensionNumber: string;
+  name: string;
+  type: string;
+  status: string;
+  contact?: {
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+  };
+}
+
+interface RCExtensionListResponse {
+  records: RCExtension[];
+  paging?: {
+    page: number;
+    totalPages: number;
+    perPage: number;
+    totalElements: number;
+  };
+  navigation?: {
+    nextPage?: { uri: string };
+  };
+}
+
+/**
+ * List all extensions in the account
+ */
+export async function listExtensions(): Promise<RCExtension[]> {
+  const token = await getAccessToken();
+  const accountId = process.env.RC_ACCOUNT_ID || "~";
+
+  const allExtensions: RCExtension[] = [];
+  let nextPageUri: string | null =
+    `${RC_BASE_URL}/restapi/v1.0/account/${accountId}/extension?perPage=100&type=User`;
+
+  while (nextPageUri) {
+    const response = await fetch(nextPageUri, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`RC Extension List failed: ${response.status} - ${text}`);
+    }
+
+    const data: RCExtensionListResponse = await response.json();
+    allExtensions.push(...data.records);
+
+    nextPageUri = data.navigation?.nextPage?.uri || null;
+
+    if (nextPageUri) {
+      await new Promise((r) => setTimeout(r, 200));
+    }
+  }
+
+  return allExtensions;
+}
+
 /**
  * Download audio file from RingCentral
  * @param contentUri - The RC content URI for the audio file
- * @returns Audio file as ArrayBuffer with content type
+ * @returns Audio file as ArrayBuffer with content type and rate limit info
  */
 export async function downloadRecordingAudio(
   contentUri: string
-): Promise<{ data: ArrayBuffer; contentType: string }> {
+): Promise<{ data: ArrayBuffer; contentType: string; rateLimit: RCRateLimitInfo }> {
   const token = await getAccessToken();
 
   const response = await fetch(contentUri, {
     headers: { Authorization: `Bearer ${token}` },
   });
+
+  const rateLimit: RCRateLimitInfo = {
+    group: response.headers.get("x-rate-limit-group"),
+    limit: parseInt(response.headers.get("x-rate-limit-limit") || "", 10) || null,
+    remaining: parseInt(response.headers.get("x-rate-limit-remaining") || "", 10) || null,
+  };
 
   if (!response.ok) {
     throw new Error(`Failed to download audio: ${response.status}`);
@@ -293,5 +365,5 @@ export async function downloadRecordingAudio(
   const contentType = response.headers.get("content-type") || "audio/mpeg";
   const data = await response.arrayBuffer();
 
-  return { data, contentType };
+  return { data, contentType, rateLimit };
 }

@@ -38,3 +38,6 @@ pnpm-debug.log*
 
 env_Variables__c-12_8_2025.csv
 scripts/deals-cache/
+supabase/backup/
+
+
