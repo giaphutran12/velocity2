@@ -23,6 +23,8 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: 300,
     color: "#2c3e50",
+    paddingTop: 10,
+    paddingBottom: 35,
   },
   // Header - only on page 1 (compact)
   header: {
@@ -124,7 +126,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffebee",
     padding: "15px 50px",
     borderLeft: "5px solid #c62828",
-    marginVertical: 12,
+    marginVertical: 20,
   },
   painTitle: {
     fontSize: 14,
@@ -258,7 +260,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#e8f5e9",
     padding: "15px 50px",
     borderLeft: "5px solid #2e7d32",
-    marginVertical: 12,
+    marginVertical: 20,
   },
   solutionTitle: {
     fontSize: 14,
@@ -305,7 +307,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#f5f5f5",
     padding: "15px 50px",
     borderLeft: "5px solid #78909c",
-    marginVertical: 12,
+    marginVertical: 20,
   },
   loanDetailsTitle: {
     fontSize: 14,
@@ -380,6 +382,16 @@ const styles = StyleSheet.create({
     color: "#546e7a",
     borderTop: "1px solid #e0e0e0",
     backgroundColor: "white",
+  },
+  // Fixed page footer (in margin, doesn't take content space)
+  pageFooter: {
+    position: "absolute",
+    bottom: 15,
+    left: 50,
+    right: 50,
+    textAlign: "center",
+    fontSize: 8,
+    color: "#9e9e9e",
   },
 });
 
@@ -463,7 +475,7 @@ export function ProposalPDF({ data, logoBase64 }: ProposalPDFProps) {
 
         {/* Pain Section - Current Financial Burden */}
         <View style={styles.painSection} wrap={false}>
-          <Text style={styles.painTitle}>⚠️ Your Current Financial Burden</Text>
+          <Text style={styles.painTitle}>Your Current Financial Burden</Text>
           <View style={styles.painStatsGrid}>
             <View style={styles.painStat}>
               <Text style={styles.painStatLabel}>Total Debt Obligations</Text>
@@ -627,6 +639,11 @@ export function ProposalPDF({ data, logoBase64 }: ProposalPDFProps) {
             </Text>
           </View>
         </View>
+
+        {/* Fixed footer in margin */}
+        <Text style={styles.pageFooter} fixed>
+          © Blue Pearl 2025. All rights reserved.
+        </Text>
       </Page>
     </Document>
   );
