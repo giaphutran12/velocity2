@@ -9,6 +9,7 @@
 - **NEVER read .env files** - environment variables are private
 - Use parallel agents whenever it makes sense to speed up the process, save main agent context window
 - `/api/sync` and `/api/verify` require `Authorization: Bearer $CRON_SECRET` header
+- **NEVER create branches** — work on the current branch only. Branch management is the user's job. Creating branches causes merge conflicts.
 
 ## UI Components (shadcn/ui)
 
