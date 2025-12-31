@@ -106,107 +106,101 @@ const ProposalPrint = forwardRef<HTMLDivElement, ProposalPrintProps>(
           .header {
             background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
             color: white;
-            padding: 25px 50px;
+            padding: 12px 50px;
           }
 
           .header-content {
             display: flex;
             align-items: center;
-            gap: 20px;
+            gap: 15px;
           }
 
           .logo-image {
-            height: 60px;
-            width: auto;
+            height: 40px;
+            width: 40px;
             border-radius: 50%;
           }
 
           .client-name {
-            font-size: 18px;
+            font-size: 16px;
             opacity: 0.9;
           }
 
           .hero-section {
             background: #f0f7ff;
-            padding: 50px;
+            padding: 20px 50px;
             text-align: center;
-            border-bottom: 4px solid #e3f2fd;
+            border-bottom: 3px solid #e3f2fd;
           }
 
           .hero-title {
-            font-size: 32px;
+            font-size: 24px;
             font-weight: 700;
             color: #1e3c72;
-            margin-bottom: 15px;
+            margin-bottom: 6px;
           }
 
           .hero-subtitle {
-            font-size: 18px;
+            font-size: 12px;
             color: #546e7a;
-            margin-bottom: 30px;
+            margin-bottom: 12px;
           }
 
           .goals-section {
             background: white;
-            padding: 25px;
-            border-radius: 8px;
-            margin-bottom: 30px;
-            text-align: left;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-          }
-
-          .goals-title {
-            font-size: 16px;
-            font-weight: 700;
-            color: #1e3c72;
-            margin-bottom: 15px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
           }
 
           .goal-item {
-            padding: 8px 0;
-            padding-left: 25px;
-            position: relative;
-            font-size: 15px;
-            line-height: 1.8;
+            display: flex;
+            align-items: center;
+            font-size: 9px;
             color: #37474f;
           }
 
           .goal-item:before {
             content: "✓";
-            position: absolute;
-            left: 0;
             color: #2e7d32;
-            font-weight: 700;
-            font-size: 18px;
+            font-weight: 600;
+            font-size: 9px;
+            margin-right: 4px;
           }
 
           .benefits-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-            margin-top: 30px;
+            gap: 10px;
+            margin-top: 10px;
           }
 
           .benefit-card {
             background: white;
-            padding: 25px 20px;
-            border-radius: 8px;
+            padding: 12px 10px;
+            border-radius: 6px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
             text-align: center;
           }
 
           .benefit-label {
-            font-size: 13px;
+            font-size: 8px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.4px;
             color: #78909c;
-            margin-bottom: 8px;
-            font-weight: 600;
+            margin-bottom: 4px;
+            font-weight: 500;
           }
 
           .benefit-amount {
-            font-size: 36px;
-            font-weight: 700;
+            font-size: 18px;
+            font-weight: 600;
             color: #2e7d32;
           }
 
@@ -215,152 +209,148 @@ const ProposalPrint = forwardRef<HTMLDivElement, ProposalPrintProps>(
           }
 
           .benefit-period {
-            font-size: 14px;
+            font-size: 9px;
             color: #78909c;
-            margin-top: 5px;
+            margin-top: 2px;
           }
 
-          /* Pain Section - Red */
+          /* Pain Section - Red (compact) */
           .pain-section {
             background: linear-gradient(135deg, #ffebee 0%, #fce4ec 100%);
-            padding: 40px 50px;
-            border-left: 6px solid #c62828;
-            margin: 40px 0;
+            padding: 15px 50px;
+            border-left: 5px solid #c62828;
+            margin: 12px 0;
           }
 
           .pain-title {
-            font-size: 22px;
-            font-weight: 700;
+            font-size: 14px;
+            font-weight: 600;
             color: #c62828;
-            margin-bottom: 25px;
+            margin-bottom: 10px;
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 8px;
           }
 
           .pain-stats {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 25px;
-            margin-top: 20px;
+            gap: 15px;
           }
 
           .pain-stat {
             background: white;
-            padding: 20px;
-            border-radius: 8px;
+            padding: 12px;
+            border-radius: 6px;
             box-shadow: 0 2px 8px rgba(198, 40, 40, 0.15);
           }
 
           .pain-stat-label {
-            font-size: 14px;
+            font-size: 10px;
             color: #78909c;
-            margin-bottom: 8px;
-            font-weight: 600;
+            margin-bottom: 4px;
+            font-weight: 500;
           }
 
           .pain-stat-value {
-            font-size: 36px;
-            font-weight: 900;
+            font-size: 22px;
+            font-weight: 700;
             color: #c62828;
           }
 
           .pain-description {
-            font-size: 14px;
+            font-size: 9px;
             color: #78909c;
-            margin-top: 8px;
-            line-height: 1.5;
+            margin-top: 4px;
+            line-height: 1.3;
           }
 
           .section {
-            padding: 40px 50px;
+            padding: 15px 50px;
           }
 
           .section-title {
-            font-size: 22px;
-            font-weight: 700;
+            font-size: 14px;
+            font-weight: 600;
             color: #1e3c72;
-            margin-bottom: 25px;
-            padding-bottom: 10px;
-            border-bottom: 3px solid #e3f2fd;
+            margin-bottom: 12px;
+            padding-bottom: 6px;
+            border-bottom: 2px solid #e3f2fd;
           }
 
           .proposed-solution {
             background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%);
-            padding: 35px;
-            border-radius: 8px;
-            margin-top: 30px;
-            border-left: 6px solid #2e7d32;
+            padding: 18px;
+            border-radius: 6px;
+            margin-top: 10px;
+            border-left: 5px solid #2e7d32;
           }
 
           .solution-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 25px;
-            margin-top: 20px;
+            gap: 8px;
           }
 
           .solution-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 15px 0;
+            padding: 8px;
           }
 
           .solution-label {
-            font-size: 15px;
+            font-size: 10px;
             color: #546e7a;
-            font-weight: 500;
           }
 
           .solution-value {
-            font-size: 20px;
-            font-weight: 700;
+            font-size: 14px;
+            font-weight: 600;
             color: #2e7d32;
           }
 
           .solution-value.large {
-            font-size: 28px;
+            font-size: 18px;
           }
 
           .loan-details {
             background: #fafafa;
-            padding: 25px;
-            border-radius: 8px;
-            margin-top: 25px;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 10px;
           }
 
           .loan-details-title {
-            font-size: 16px;
-            margin-bottom: 15px;
+            font-size: 11px;
+            margin-bottom: 8px;
             color: #1e3c72;
-            font-weight: 700;
+            font-weight: 600;
           }
 
           .details-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-            margin-top: 15px;
+            gap: 8px;
           }
 
           .detail-item {
             text-align: center;
-            padding: 15px;
+            padding: 6px 4px;
           }
 
           .detail-label {
-            font-size: 12px;
+            font-size: 8px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.4px;
             color: #78909c;
-            margin-bottom: 8px;
-            font-weight: 600;
+            margin-bottom: 3px;
+            font-weight: 500;
           }
 
           .detail-value {
-            font-size: 18px;
-            font-weight: 700;
+            font-size: 12px;
+            font-weight: 600;
             color: #37474f;
           }
 
@@ -504,17 +494,14 @@ const ProposalPrint = forwardRef<HTMLDivElement, ProposalPrintProps>(
             Consolidate your debts and unlock cash from your home
           </p>
 
-          {/* Goals Section */}
+          {/* Goals Section - inline row */}
           {data.goals.length > 0 && (
             <div className="goals-section">
-              <div className="goals-title">Your Financial Goals</div>
-              <div>
-                {data.goals.map((goal, index) => (
-                  <div key={index} className="goal-item">
-                    {goal}
-                  </div>
-                ))}
-              </div>
+              {data.goals.map((goal, index) => (
+                <div key={index} className="goal-item">
+                  {goal}
+                </div>
+              ))}
             </div>
           )}
 

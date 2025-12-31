@@ -43,160 +43,159 @@ const styles = StyleSheet.create({
     fontWeight: 300,
     color: "#2c3e50",
   },
-  // Header - only on page 1
+  // Header - only on page 1 (compact)
   header: {
     backgroundColor: "#1e3c72",
-    padding: "25px 50px",
+    padding: "12px 50px",
     flexDirection: "row",
     alignItems: "center",
-    gap: 20,
+    gap: 15,
   },
   logoImage: {
-    height: 60,
-    width: 60,
-    borderRadius: 30,
+    height: 40,
+    width: 40,
+    borderRadius: 20,
   },
   clientName: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 400,
     color: "white",
   },
-  // Hero Section
+  // Hero Section (compact)
   heroSection: {
     backgroundColor: "#f0f7ff",
-    padding: "40px 50px",
+    padding: "20px 50px",
     textAlign: "center",
-    borderBottom: "4px solid #e3f2fd",
+    borderBottom: "3px solid #e3f2fd",
   },
   heroTitle: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: 600,
     color: "#1e3c72",
-    marginBottom: 10,
+    marginBottom: 6,
   },
   heroSubtitle: {
-    fontSize: 14,
+    fontSize: 12,
     color: "#546e7a",
-    marginBottom: 20,
+    marginBottom: 12,
   },
-  // Goals Section
+  // Goals Section (compact inline row)
   goalsSection: {
     backgroundColor: "white",
-    padding: 20,
-    borderRadius: 8,
-    marginBottom: 25,
-    textAlign: "left",
-  },
-  goalsTitle: {
-    fontSize: 14,
-    fontWeight: 600,
-    color: "#1e3c72",
-    marginBottom: 12,
+    padding: "8px 12px",
+    borderRadius: 6,
+    marginBottom: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    flexWrap: "wrap",
   },
   goalItem: {
     flexDirection: "row",
-    paddingVertical: 6,
-    alignItems: "flex-start",
+    alignItems: "center",
+    marginRight: 12,
   },
   goalCheckmark: {
     color: "#2e7d32",
-    fontWeight: 700,
-    fontSize: 14,
-    marginRight: 10,
-    width: 18,
+    fontWeight: 600,
+    fontSize: 9,
+    marginRight: 4,
   },
   goalText: {
-    fontSize: 11,
+    fontSize: 9,
     color: "#37474f",
-    flex: 1,
-    lineHeight: 1.5,
+  },
+  goalSeparator: {
+    fontSize: 9,
+    color: "#78909c",
+    marginHorizontal: 8,
   },
   benefitsGrid: {
     flexDirection: "row",
-    gap: 15,
-    marginTop: 20,
+    gap: 10,
+    marginTop: 10,
   },
   benefitCard: {
     flex: 1,
     backgroundColor: "white",
-    padding: "20px 15px",
-    borderRadius: 8,
+    padding: "12px 10px",
+    borderRadius: 6,
     textAlign: "center",
   },
   benefitLabel: {
-    fontSize: 9,
+    fontSize: 8,
     textTransform: "uppercase",
-    letterSpacing: 0.5,
+    letterSpacing: 0.4,
     color: "#78909c",
-    marginBottom: 6,
+    marginBottom: 4,
     fontWeight: 500,
   },
   benefitAmount: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: 600,
     color: "#2e7d32",
   },
   benefitAmountHighlight: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: 600,
     color: "#1565c0",
   },
   benefitPeriod: {
-    fontSize: 10,
+    fontSize: 9,
     color: "#78909c",
-    marginTop: 4,
+    marginTop: 2,
   },
-  // Pain Section (Red)
+  // Pain Section (Red) - compact
   painSection: {
     backgroundColor: "#ffebee",
-    padding: "30px 50px",
-    borderLeft: "6px solid #c62828",
-    marginVertical: 30,
+    padding: "15px 50px",
+    borderLeft: "5px solid #c62828",
+    marginVertical: 12,
   },
   painTitle: {
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: 600,
     color: "#c62828",
-    marginBottom: 20,
+    marginBottom: 10,
   },
   painStatsGrid: {
     flexDirection: "row",
-    gap: 20,
+    gap: 15,
   },
   painStat: {
     flex: 1,
     backgroundColor: "white",
-    padding: 18,
-    borderRadius: 8,
+    padding: 12,
+    borderRadius: 6,
   },
   painStatLabel: {
-    fontSize: 11,
+    fontSize: 10,
     color: "#78909c",
-    marginBottom: 6,
+    marginBottom: 4,
     fontWeight: 500,
   },
   painStatValue: {
-    fontSize: 28,
+    fontSize: 22,
     fontWeight: 700,
     color: "#c62828",
   },
   painDescription: {
-    fontSize: 10,
+    fontSize: 9,
     color: "#78909c",
-    marginTop: 6,
-    lineHeight: 1.4,
+    marginTop: 4,
+    lineHeight: 1.3,
   },
-  // Section
+  // Section (compact)
   section: {
-    padding: "30px 50px",
+    padding: "15px 50px",
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: 600,
     color: "#1e3c72",
-    marginBottom: 20,
-    paddingBottom: 8,
-    borderBottom: "3px solid #e3f2fd",
+    marginBottom: 12,
+    paddingBottom: 6,
+    borderBottom: "2px solid #e3f2fd",
   },
   // Credit Warning Explanation
   creditWarningBox: {
@@ -259,13 +258,13 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 6,
     borderBottomRightRadius: 6,
   },
-  // Proposed Solution - 2x2 grid with stacked label/value
+  // Proposed Solution - 2x2 grid (compact)
   proposedSolution: {
     backgroundColor: "#e8f5e9",
-    padding: 30,
-    borderRadius: 8,
-    marginTop: 20,
-    borderLeft: "6px solid #2e7d32",
+    padding: 18,
+    borderRadius: 6,
+    marginTop: 10,
+    borderLeft: "5px solid #2e7d32",
   },
   solutionGrid: {
     flexDirection: "row",
@@ -273,35 +272,35 @@ const styles = StyleSheet.create({
   },
   solutionItem: {
     width: "50%",
-    padding: "12px 10px",
+    padding: "8px 8px",
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
   solutionLabel: {
-    fontSize: 11,
+    fontSize: 10,
     color: "#546e7a",
   },
   solutionValue: {
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: 600,
     color: "#2e7d32",
   },
   solutionValueLarge: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: 600,
     color: "#2e7d32",
   },
-  // Loan Details - 3 columns, stacked label/value
+  // Loan Details - 3 columns (compact)
   loanDetails: {
     backgroundColor: "#fafafa",
-    padding: 20,
-    borderRadius: 8,
-    marginTop: 20,
+    padding: 12,
+    borderRadius: 6,
+    marginTop: 10,
   },
   loanDetailsTitle: {
-    fontSize: 13,
-    marginBottom: 12,
+    fontSize: 11,
+    marginBottom: 8,
     color: "#1e3c72",
     fontWeight: 600,
   },
@@ -312,18 +311,18 @@ const styles = StyleSheet.create({
   detailItem: {
     width: "33.33%",
     textAlign: "center",
-    padding: "10px 5px",
+    padding: "6px 4px",
   },
   detailLabel: {
-    fontSize: 9,
+    fontSize: 8,
     textTransform: "uppercase",
-    letterSpacing: 0.5,
+    letterSpacing: 0.4,
     color: "#78909c",
-    marginBottom: 5,
+    marginBottom: 3,
     fontWeight: 500,
   },
   detailValue: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: 600,
     color: "#37474f",
   },
@@ -415,10 +414,9 @@ export function ProposalPDF({ data, logoBase64 }: ProposalPDFProps) {
             Consolidate your debts and unlock cash from your home
           </Text>
 
-          {/* Goals Section */}
+          {/* Goals Section - inline row */}
           {data.goals && data.goals.length > 0 && (
             <View style={styles.goalsSection}>
-              <Text style={styles.goalsTitle}>Your Financial Goals</Text>
               {data.goals.map((goal, index) => (
                 <View key={index} style={styles.goalItem}>
                   <Text style={styles.goalCheckmark}>✓</Text>
@@ -621,8 +619,8 @@ export function ProposalPDF({ data, logoBase64 }: ProposalPDFProps) {
           <Text style={styles.contactInfo}>info@bluepearlmortgage.ca</Text>
         </View>
 
-        {/* Disclaimer */}
-        <View style={styles.disclaimer}>
+        {/* Disclaimer - force new page to prevent cutoff */}
+        <View style={styles.disclaimer} break>
           <Text style={styles.disclaimerTitle}>Important Disclosure</Text>
           <Text>
             Blue Pearl Mortgage Group&apos;s intent is to always provide full
