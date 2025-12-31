@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabase } from "@/lib/supabase";
 import { syncDeal, formatError } from "@/lib/sync-deal";
+import { fetchDealsInRange } from "@/lib/velocity-api";
 import { VelocityDeal } from "@/lib/transformer";
 
 // Vercel cron security
@@ -11,62 +12,41 @@ interface Broker {
   name: string;
   api_key: string;
   base_url: string;
+  last_sync_at: string | null;
 }
 
-interface VelocityResponse {
-  pageNumber: number;
-  totalPages: number;
-  totalDeals: number;
-  deals: VelocityDeal[];
-}
+/**
+ * Fetch deals for a broker from Velocity API.
+ * - If broker has `last_sync_at`: incremental sync from that date (fast)
+ * - If no `last_sync_at`: full sync from 2021 (first-time only)
+ *
+ * @example
+ * const deals = await fetchBrokerDeals(broker);
+ * // Returns VelocityDeal[] ready for syncDeal()
+ */
+async function fetchBrokerDeals(broker: Broker): Promise<VelocityDeal[]> {
+  const endDate = new Date().toISOString().split("T")[0];
 
-// Fetch deals for a year from Velocity API
-async function fetchDealsForYear(broker: Broker, year: number): Promise<VelocityDeal[]> {
-  const allDeals: VelocityDeal[] = [];
-  let page = 1;
-  let totalPages = 1;
-
-  const startDate = `${year}-01-01`;
-  const endDate = year === new Date().getFullYear()
-    ? new Date().toISOString().split("T")[0]
-    : `${year}-12-31`;
-
-  while (page <= totalPages) {
-    const url = `${broker.base_url}/v1/deals?apikey=${broker.api_key}&startdate=${startDate}&enddate=${endDate}&datetype=1&page=${page}`;
-
-    const response = await fetch(url, {
-      headers: { "Content-Type": "application/json" },
-    });
-
-    if (!response.ok) {
-      const text = await response.text();
-      throw new Error(`Velocity API error: ${response.status} - ${text}`);
-    }
-
-    const data: VelocityResponse = await response.json();
-    allDeals.push(...data.deals);
-    totalPages = data.totalPages;
-    page++;
-
-    if (page <= totalPages) {
-      await new Promise((r) => setTimeout(r, 200));
-    }
+  // Incremental sync: fetch from last sync date
+  if (broker.last_sync_at) {
+    const startDate = broker.last_sync_at.split("T")[0];
+    console.log(`[CRON SYNC] ${broker.name}: incremental sync from ${startDate} to ${endDate}`);
+    return fetchDealsInRange(broker, startDate, endDate);
   }
 
-  console.log(`[CRON SYNC] ${broker.name} ${year}: fetched ${allDeals.length} deals`);
-  return allDeals;
-}
-
-// Fetch all deals for a broker (loops through years)
-async function fetchBrokerDeals(broker: Broker): Promise<VelocityDeal[]> {
+  // First-time sync: fetch all years from 2021
+  console.log(`[CRON SYNC] ${broker.name}: full sync (first time) from 2021 to ${endDate}`);
   const allDeals: VelocityDeal[] = [];
   const currentYear = new Date().getFullYear();
-  const startYear = 2021;
 
-  for (let year = startYear; year <= currentYear; year++) {
+  for (let year = 2021; year <= currentYear; year++) {
+    const yearStart = `${year}-01-01`;
+    const yearEnd = year === currentYear ? endDate : `${year}-12-31`;
+
     try {
-      const yearDeals = await fetchDealsForYear(broker, year);
+      const yearDeals = await fetchDealsInRange(broker, yearStart, yearEnd);
       allDeals.push(...yearDeals);
+      console.log(`[CRON SYNC] ${broker.name} ${year}: fetched ${yearDeals.length} deals`);
       await new Promise((r) => setTimeout(r, 100));
     } catch (error) {
       console.error(`[CRON SYNC] ${broker.name} ${year}: failed -`, error);
@@ -77,7 +57,16 @@ async function fetchBrokerDeals(broker: Broker): Promise<VelocityDeal[]> {
   return allDeals;
 }
 
-// Main cron handler
+/**
+ * Cron endpoint to sync deals from Velocity API for all active brokers.
+ *
+ * @example
+ * // Sync all active brokers
+ * curl "http://localhost:3000/api/cron/sync" -H "Authorization: Bearer $CRON_SECRET"
+ *
+ * // Sync specific broker (partial match)
+ * curl "http://localhost:3000/api/cron/sync?broker=Nav" -H "Authorization: Bearer $CRON_SECRET"
+ */
 export async function GET(request: NextRequest) {
   console.log("[CRON SYNC] Starting at", new Date().toISOString());
 
@@ -91,11 +80,21 @@ export async function GET(request: NextRequest) {
   const supabase = getSupabase();
 
   try {
-    // Get all active brokers
-    const { data: brokers, error: brokersError } = await supabase
+    // Check for broker filter
+    const { searchParams } = new URL(request.url);
+    const brokerFilter = searchParams.get("broker");
+
+    // Get active brokers (optionally filtered by name)
+    let query = supabase
       .from("vl_brokers")
-      .select("id, name, api_key, base_url")
+      .select("id, name, api_key, base_url, last_sync_at")
       .eq("is_active", true);
+
+    if (brokerFilter) {
+      query = query.ilike("name", `%${brokerFilter}%`);
+    }
+
+    const { data: brokers, error: brokersError } = await query;
 
     if (brokersError) {
       throw new Error(`Failed to fetch brokers: ${formatError(brokersError)}`);
@@ -125,6 +124,12 @@ export async function GET(request: NextRequest) {
       try {
         // Fetch deals from Velocity
         const deals = await fetchBrokerDeals(broker);
+
+        // Log deals to sync
+        if (deals.length > 0) {
+          console.log(`[CRON SYNC] ${broker.name}: syncing ${deals.length} deals:`);
+          deals.forEach((d) => console.log(`  → ${d.loanCode}`));
+        }
 
         // Sync deals with broker_id
         const syncResults = await Promise.all(

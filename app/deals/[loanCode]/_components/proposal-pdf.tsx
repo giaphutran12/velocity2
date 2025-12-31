@@ -7,34 +7,9 @@ import {
   StyleSheet,
   Font,
 } from "@react-pdf/renderer";
-import { ProposalData } from "./proposal-print";
+import { ProposalData } from "@/lib/proposal-pdf-types";
 
-// Register Open Sans font (modern, clean, reliable TTF source)
-Font.register({
-  family: "OpenSans",
-  fonts: [
-    {
-      src: "https://cdn.jsdelivr.net/npm/@fontsource/open-sans/files/open-sans-latin-300-normal.woff",
-      fontWeight: 300,
-    },
-    {
-      src: "https://cdn.jsdelivr.net/npm/@fontsource/open-sans/files/open-sans-latin-400-normal.woff",
-      fontWeight: 400,
-    },
-    {
-      src: "https://cdn.jsdelivr.net/npm/@fontsource/open-sans/files/open-sans-latin-500-normal.woff",
-      fontWeight: 500,
-    },
-    {
-      src: "https://cdn.jsdelivr.net/npm/@fontsource/open-sans/files/open-sans-latin-600-normal.woff",
-      fontWeight: 600,
-    },
-    {
-      src: "https://cdn.jsdelivr.net/npm/@fontsource/open-sans/files/open-sans-latin-700-normal.woff",
-      fontWeight: 700,
-    },
-  ],
-});
+Font.register({ family: "OpenSans", fonts: [300, 400, 500, 600, 700].map((w) => ({ src: `https://cdn.jsdelivr.net/npm/@fontsource/open-sans/files/open-sans-latin-${w}-normal.woff`, fontWeight: w })) });
 
 const styles = StyleSheet.create({
   page: {
@@ -480,9 +455,9 @@ export function ProposalPDF({ data, logoBase64 }: ProposalPDFProps) {
         <View style={styles.section}>
           {/* Wrap title + solution box together to prevent page break between them */}
           <View wrap={false}>
-            {/* <Text style={styles.sectionTitle}> */}
-            {/* Your New Consolidated Mortgage - The Solution
-            </Text> */}
+            <Text style={styles.sectionTitle}>
+              Your New Consolidated Mortgage - The Solution
+            </Text>
 
             <View style={styles.proposedSolution}>
               <View style={styles.solutionGrid}>
@@ -625,33 +600,8 @@ export function ProposalPDF({ data, logoBase64 }: ProposalPDFProps) {
         {/* Disclaimer - force new page to prevent cutoff */}
         <View style={styles.disclaimer} break>
           <Text style={styles.disclaimerTitle}>Important Disclosure</Text>
-          <Text>
-            Blue Pearl Mortgage Group&apos;s intent is to always provide full
-            disclosure of our loan offerings. Borrowers are provided with all
-            necessary disclosure prior to entering any obligation. We are not
-            affiliated with any financial institutions, which include banks,
-            credit unions, alternative and private lenders. The rates and
-            scenarios shown on the pages of this sample solution are only
-            applicable to loans being processed by Blue Pearl Mortgage Group.
-            This example is for informational purposes only; it&apos;s not an
-            offer to make a loan or the approval of any loan terms. The payment
-            calculations shown here are simply estimates and are based upon the
-            unverified information as shared above. Blue Pearl Mortgage Group
-            and its representatives have taken reasonable care in providing this
-            example but do not guarantee accuracy or completeness. Information
-            is provided with no warranty, express or implied, and all such
-            warranties are expressly disclaimed. We assume no liability for any
-            loss, damage or expense from errors or omissions in these materials,
-            whether arising from use or non-use of the information. Blue Pearl
-            Mortgage Group is not responsible for any loss, injury, claim,
-            liability, or damage related to your use of this proposal or any
-            information contained in this document.
-          </Text>
-          <Text style={{ marginTop: 8 }}>
-            Licensing: British Columbia Brokerage #X300317 • Alberta Brokerage
-            #389306 • Saskatchewan Brokerage #316807 • Ontario FSCO License
-            #12890
-          </Text>
+          <Text>Blue Pearl Mortgage Group&apos;s intent is to always provide full disclosure of our loan offerings. Borrowers are provided with all necessary disclosure prior to entering any obligation. We are not affiliated with any financial institutions, which include banks, credit unions, alternative and private lenders. The rates and scenarios shown on the pages of this sample solution are only applicable to loans being processed by Blue Pearl Mortgage Group. This example is for informational purposes only; it&apos;s not an offer to make a loan or the approval of any loan terms. The payment calculations shown here are simply estimates and are based upon the unverified information as shared above. Blue Pearl Mortgage Group and its representatives have taken reasonable care in providing this example but do not guarantee accuracy or completeness. Information is provided with no warranty, express or implied, and all such warranties are expressly disclaimed. We assume no liability for any loss, damage or expense from errors or omissions in these materials, whether arising from use or non-use of the information. Blue Pearl Mortgage Group is not responsible for any loss, injury, claim, liability, or damage related to your use of this proposal or any information contained in this document.</Text>
+          <Text style={{ marginTop: 8 }}>Licensing: British Columbia Brokerage #X300317 • Alberta Brokerage #389306 • Saskatchewan Brokerage #316807 • Ontario FSCO License #12890</Text>
         </View>
 
         {/* Footer - only appears at end of document */}

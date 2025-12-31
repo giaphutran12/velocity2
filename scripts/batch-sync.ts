@@ -31,7 +31,17 @@ interface SyncResult {
   dealsSynced: number;
   dealsFailed: number;
   error?: string;
+  apiStatus: "success" | "partial" | "failed"; // Distinguish API success from failure
+  yearErrors?: string[]; // Track which years had API errors
   duration: number;
+}
+
+interface FetchResult {
+  deals: unknown[];
+  totalDeals: number;
+  yearErrors: Array<{ year: number; error: string }>;
+  hasErrors: boolean;
+  allFailed: boolean;
 }
 
 // Config
@@ -115,10 +125,12 @@ async function fetchDealsForYear(broker: Broker, year: number): Promise<unknown[
 }
 
 // Fetch all deals for a broker (loops through years since max 12 months per request)
-async function fetchBrokerDeals(broker: Broker): Promise<VelocityResponse> {
+async function fetchBrokerDeals(broker: Broker): Promise<FetchResult> {
   const allDeals: unknown[] = [];
+  const yearErrors: Array<{ year: number; error: string }> = [];
   const currentYear = new Date().getFullYear();
   const startYear = 2021; // API only allows past 5 years
+  const totalYears = currentYear - startYear + 1;
 
   for (let year = startYear; year <= currentYear; year++) {
     try {
@@ -128,22 +140,25 @@ async function fetchBrokerDeals(broker: Broker): Promise<VelocityResponse> {
           console.log(`    ${year}: ${yearDeals.length} deals`);
         }
         allDeals.push(...yearDeals);
+      } else if (verbose) {
+        console.log(`    ${year}: 0 deals`);
       }
       // Rate limit between years
       await sleep(100);
     } catch (error) {
-      // Log but continue with other years
-      if (verbose) {
-        console.log(`    ${year}: error - ${error}`);
-      }
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      yearErrors.push({ year, error: errorMsg });
+      // Always log errors, not just in verbose mode
+      console.log(`    ${year}: API ERROR - ${errorMsg}`);
     }
   }
 
   return {
-    pageNumber: 1,
-    totalPages: 1,
-    totalDeals: allDeals.length,
     deals: allDeals,
+    totalDeals: allDeals.length,
+    yearErrors,
+    hasErrors: yearErrors.length > 0,
+    allFailed: yearErrors.length === totalYears,
   };
 }
 
@@ -214,39 +229,68 @@ async function main() {
 
     try {
       // Fetch deals from Velocity
-      const velocityData = await fetchBrokerDeals(broker);
-      console.log(`  Found ${velocityData.totalDeals} deals`);
+      const fetchResult = await fetchBrokerDeals(broker);
+
+      // Determine API status
+      let apiStatus: "success" | "partial" | "failed";
+      if (fetchResult.allFailed) {
+        apiStatus = "failed";
+      } else if (fetchResult.hasErrors) {
+        apiStatus = "partial";
+      } else {
+        apiStatus = "success";
+      }
+
+      // Log results with clear distinction between success and failure
+      if (fetchResult.allFailed) {
+        console.log(`  API FAILED - All years returned errors`);
+      } else if (fetchResult.hasErrors) {
+        console.log(`  Found ${fetchResult.totalDeals} deals (PARTIAL - ${fetchResult.yearErrors.length} year(s) failed)`);
+      } else {
+        console.log(`  Found ${fetchResult.totalDeals} deals`);
+      }
 
       if (dryRun) {
         results.push({
           broker: broker.name,
-          dealsFound: velocityData.totalDeals,
+          dealsFound: fetchResult.totalDeals,
           dealsSynced: 0,
           dealsFailed: 0,
+          apiStatus,
+          yearErrors: fetchResult.yearErrors.length > 0
+            ? fetchResult.yearErrors.map(e => `${e.year}: ${e.error}`)
+            : undefined,
+          error: fetchResult.allFailed ? "All API calls failed" : undefined,
           duration: Date.now() - brokerStart,
         });
       } else {
         // Sync to Supabase
-        const syncResult = await syncDeals(velocityData.deals);
+        const syncResult = await syncDeals(fetchResult.deals);
         console.log(`  Synced: ${syncResult.successful} | Failed: ${syncResult.failed}`);
 
         results.push({
           broker: broker.name,
-          dealsFound: velocityData.totalDeals,
+          dealsFound: fetchResult.totalDeals,
           dealsSynced: syncResult.successful,
           dealsFailed: syncResult.failed,
+          apiStatus,
+          yearErrors: fetchResult.yearErrors.length > 0
+            ? fetchResult.yearErrors.map(e => `${e.year}: ${e.error}`)
+            : undefined,
+          error: fetchResult.allFailed ? "All API calls failed" : undefined,
           duration: Date.now() - brokerStart,
         });
       }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
-      console.log(`  ERROR: ${errorMsg}`);
+      console.log(`  FATAL ERROR: ${errorMsg}`);
 
       results.push({
         broker: broker.name,
         dealsFound: 0,
         dealsSynced: 0,
         dealsFailed: 0,
+        apiStatus: "failed",
         error: errorMsg,
         duration: Date.now() - brokerStart,
       });
@@ -263,26 +307,47 @@ async function main() {
   const totalFound = results.reduce((sum, r) => sum + r.dealsFound, 0);
   const totalSynced = results.reduce((sum, r) => sum + r.dealsSynced, 0);
   const totalFailed = results.reduce((sum, r) => sum + r.dealsFailed, 0);
-  const totalErrors = results.filter((r) => r.error).length;
+
+  // Count different error categories
+  const brokersSuccess = results.filter((r) => r.apiStatus === "success").length;
+  const brokersPartial = results.filter((r) => r.apiStatus === "partial").length;
+  const brokersFailed = results.filter((r) => r.apiStatus === "failed").length;
 
   console.log("\n" + "=".repeat(60));
   console.log("SUMMARY");
   console.log("=".repeat(60));
   console.log(`Brokers processed: ${brokers.length}`);
+  console.log(`  - Success:       ${brokersSuccess}`);
+  console.log(`  - Partial:       ${brokersPartial} (some years failed)`);
+  console.log(`  - Failed:        ${brokersFailed} (all API calls failed)`);
   console.log(`Total deals found: ${totalFound}`);
   if (!dryRun) {
     console.log(`Deals synced:      ${totalSynced}`);
     console.log(`Deals failed:      ${totalFailed}`);
   }
-  console.log(`Broker errors:     ${totalErrors}`);
   console.log(`Total time:        ${(totalDuration / 1000).toFixed(1)}s`);
 
-  // Show failed brokers
-  const failedBrokers = results.filter((r) => r.error);
-  if (failedBrokers.length > 0) {
-    console.log("\nFailed Brokers:");
-    failedBrokers.forEach((r) => {
-      console.log(`  - ${r.broker}: ${r.error}`);
+  // Show brokers with complete API failure
+  const completelyFailedBrokers = results.filter((r) => r.apiStatus === "failed");
+  if (completelyFailedBrokers.length > 0) {
+    console.log("\nBrokers with COMPLETE API Failure (0 deals due to errors):");
+    completelyFailedBrokers.forEach((r) => {
+      console.log(`  - ${r.broker}: ${r.error || "All year requests failed"}`);
+      if (r.yearErrors && r.yearErrors.length > 0) {
+        r.yearErrors.forEach((ye) => console.log(`      ${ye}`));
+      }
+    });
+  }
+
+  // Show brokers with partial API failure
+  const partiallyFailedBrokers = results.filter((r) => r.apiStatus === "partial");
+  if (partiallyFailedBrokers.length > 0) {
+    console.log("\nBrokers with PARTIAL API Failure (some years failed):");
+    partiallyFailedBrokers.forEach((r) => {
+      console.log(`  - ${r.broker}: ${r.dealsFound} deals found, but some years failed:`);
+      if (r.yearErrors) {
+        r.yearErrors.forEach((ye) => console.log(`      ${ye}`));
+      }
     });
   }
 
@@ -291,18 +356,22 @@ async function main() {
   fs.writeFileSync(resultsPath, JSON.stringify({
     timestamp: new Date().toISOString(),
     dryRun,
-    brokerCount: brokers.length,
-    totalDealsFound: totalFound,
-    totalDealsSynced: totalSynced,
-    totalDealsFailed: totalFailed,
-    brokerErrors: totalErrors,
-    durationMs: totalDuration,
+    summary: {
+      brokerCount: brokers.length,
+      brokersSuccess,
+      brokersPartial,
+      brokersFailed,
+      totalDealsFound: totalFound,
+      totalDealsSynced: totalSynced,
+      totalDealsFailed: totalFailed,
+      durationMs: totalDuration,
+    },
     results,
   }, null, 2));
   console.log(`\nResults saved to: ${resultsPath}`);
 
   // Exit with error code if any failures
-  if (totalFailed > 0 || totalErrors > 0) {
+  if (totalFailed > 0 || brokersFailed > 0) {
     process.exit(1);
   }
 }

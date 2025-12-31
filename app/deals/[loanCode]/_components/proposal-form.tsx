@@ -2,8 +2,9 @@
 
 import { useState, useCallback } from "react";
 import { toast } from "sonner";
-import ProposalPrint from "./proposal-print";
 import { ProposalPDFDownload } from "./proposal-pdf-download";
+import { ProposalPreviewCard } from "./proposal-preview-card";
+import { ProposalData, Liability } from "@/lib/proposal-pdf-types";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
@@ -39,34 +40,6 @@ interface DealData {
 
 interface ProposalFormProps {
   deal: DealData;
-}
-
-// For PDF/Print - simplified liability without diff tracking
-export interface Liability {
-  id: string;
-  lender: string;
-  balance: number;
-  payment: number;
-  impacts_credit: boolean;
-}
-
-export interface ProposalData {
-  borrowerName: string;
-  liabilities: Liability[];
-  goals: string[];
-  currentTotalBalance: number;
-  currentTotalPayment: number;
-  newMortgageAmount: number;
-  newRate: number;
-  newMonthlyPayment: number;
-  termMonths: number;
-  amortizationMonths: number;
-  monthlySavings: number;
-  cashBack: number;
-  fiveYearSavings: number;
-  apr: number;
-  totalInterest: number;
-  estimatedFees: number;
 }
 
 export default function ProposalForm({ deal }: ProposalFormProps) {
@@ -567,9 +540,7 @@ export default function ProposalForm({ deal }: ProposalFormProps) {
 
       {/* Preview */}
       <div className="max-w-4xl mx-auto py-6 px-4">
-        <Card className="overflow-hidden">
-          <ProposalPrint data={proposalData} />
-        </Card>
+        <ProposalPreviewCard data={proposalData} />
       </div>
     </div>
   );

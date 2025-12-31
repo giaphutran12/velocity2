@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { pdf } from "@react-pdf/renderer";
 import { ProposalPDF } from "./proposal-pdf";
-import { ProposalData } from "./proposal-print";
+import { ProposalData } from "@/lib/proposal-pdf-types";
 import { Button } from "@/components/ui/button";
 
 interface ProposalPDFDownloadProps {
