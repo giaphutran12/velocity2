@@ -90,9 +90,9 @@ export default function ProposalForm({ deal }: ProposalFormProps) {
   // Goals state (personalized financial goals for the borrower)
   // Default goals help brokers get started quickly
   const defaultGoals = [
-    "Reduce monthly debt payments to free up cash flow",
-    "Consolidate high-interest debts into one lower payment",
-    "Simplify finances with a single monthly payment",
+    "Lower payments",
+    "Consolidate debt",
+    "Simplify finances",
   ];
   const initialGoals = deal.proposalOverrides?.goals ?? defaultGoals;
   const [goals, setGoals] = useState<string[]>(initialGoals);
