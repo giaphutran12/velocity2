@@ -3,6 +3,7 @@ import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { isAdmin } from "@/lib/admin";
 import ProposalForm from "./_components/proposal-form";
 import Link from "next/link";
+import { ProposalOverrides } from "@/lib/proposal-types";
 
 interface PageProps {
   params: Promise<{ loanCode: string }>;
@@ -57,7 +58,7 @@ export default async function DealDetailPage({ params }: PageProps) {
     ? `${primaryBorrower.first_name || ""} ${primaryBorrower.last_name || ""}`.trim()
     : "Client";
 
-  // Flatten all liabilities from all borrowers
+  // Flatten all liabilities from all borrowers (include in_credit_bureau for proposal overrides)
   const allLiabilities =
     deal.borrowers?.flatMap(
       (b: {
@@ -66,6 +67,7 @@ export default async function DealDetailPage({ params }: PageProps) {
           lender?: string;
           balance?: number;
           payment?: number;
+          in_credit_bureau?: boolean;
         }>;
       }) =>
         (b.liabilities || []).map((l) => ({
@@ -73,8 +75,12 @@ export default async function DealDetailPage({ params }: PageProps) {
           lender: l.lender || "Unknown",
           balance: l.balance || 0,
           payment: l.payment || 0,
+          in_credit_bureau: l.in_credit_bureau ?? false,
         }))
     ) || [];
+
+  // Get proposal overrides from the deal (persisted broker edits)
+  const proposalOverrides = (deal.proposal_overrides as ProposalOverrides) || null;
 
   // Get mortgage request data (from separate query)
   const mortgageRequest = mortgageRequestData;
@@ -100,6 +106,7 @@ export default async function DealDetailPage({ params }: PageProps) {
     initialTermMonths,
     initialAmortizationMonths: initialAmortizationMonths || 180,
     estimatedFees: 13000, // Default fee estimate
+    proposalOverrides,
   };
 
   return (

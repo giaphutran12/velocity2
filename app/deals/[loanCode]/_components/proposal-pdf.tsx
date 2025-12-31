@@ -77,7 +77,39 @@ const styles = StyleSheet.create({
   heroSubtitle: {
     fontSize: 14,
     color: "#546e7a",
-    marginBottom: 30,
+    marginBottom: 20,
+  },
+  // Goals Section
+  goalsSection: {
+    backgroundColor: "white",
+    padding: 20,
+    borderRadius: 8,
+    marginBottom: 25,
+    textAlign: "left",
+  },
+  goalsTitle: {
+    fontSize: 14,
+    fontWeight: 600,
+    color: "#1e3c72",
+    marginBottom: 12,
+  },
+  goalItem: {
+    flexDirection: "row",
+    paddingVertical: 6,
+    alignItems: "flex-start",
+  },
+  goalCheckmark: {
+    color: "#2e7d32",
+    fontWeight: 700,
+    fontSize: 14,
+    marginRight: 10,
+    width: 18,
+  },
+  goalText: {
+    fontSize: 11,
+    color: "#37474f",
+    flex: 1,
+    lineHeight: 1.5,
   },
   benefitsGrid: {
     flexDirection: "row",
@@ -114,6 +146,46 @@ const styles = StyleSheet.create({
     color: "#78909c",
     marginTop: 4,
   },
+  // Pain Section (Red)
+  painSection: {
+    backgroundColor: "#ffebee",
+    padding: "30px 50px",
+    borderLeft: "6px solid #c62828",
+    marginVertical: 30,
+  },
+  painTitle: {
+    fontSize: 18,
+    fontWeight: 600,
+    color: "#c62828",
+    marginBottom: 20,
+  },
+  painStatsGrid: {
+    flexDirection: "row",
+    gap: 20,
+  },
+  painStat: {
+    flex: 1,
+    backgroundColor: "white",
+    padding: 18,
+    borderRadius: 8,
+  },
+  painStatLabel: {
+    fontSize: 11,
+    color: "#78909c",
+    marginBottom: 6,
+    fontWeight: 500,
+  },
+  painStatValue: {
+    fontSize: 28,
+    fontWeight: 700,
+    color: "#c62828",
+  },
+  painDescription: {
+    fontSize: 10,
+    color: "#78909c",
+    marginTop: 6,
+    lineHeight: 1.4,
+  },
   // Section
   section: {
     padding: "30px 50px",
@@ -126,7 +198,24 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
     borderBottom: "3px solid #e3f2fd",
   },
-  // Comparison Table
+  // Credit Warning Explanation
+  creditWarningBox: {
+    backgroundColor: "#fff3e0",
+    borderLeft: "4px solid #f57c00",
+    padding: "12px 15px",
+    marginBottom: 20,
+    borderRadius: 4,
+  },
+  creditWarningText: {
+    fontSize: 10,
+    lineHeight: 1.5,
+    color: "#5d4037",
+  },
+  creditWarningBold: {
+    fontWeight: 600,
+    color: "#e65100",
+  },
+  // Comparison Table with Credit Column
   comparisonHeader: {
     flexDirection: "row",
     padding: 12,
@@ -144,6 +233,11 @@ const styles = StyleSheet.create({
     padding: "14px 12px",
     borderBottom: "1px solid #e0e0e0",
     alignItems: "center",
+  },
+  creditIcon: {
+    width: 30,
+    textAlign: "center",
+    fontSize: 14,
   },
   debtName: {
     flex: 2,
@@ -171,6 +265,7 @@ const styles = StyleSheet.create({
     padding: 30,
     borderRadius: 8,
     marginTop: 20,
+    borderLeft: "6px solid #2e7d32",
   },
   solutionGrid: {
     flexDirection: "row",
@@ -179,20 +274,21 @@ const styles = StyleSheet.create({
   solutionItem: {
     width: "50%",
     padding: "12px 10px",
-    textAlign: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   solutionLabel: {
     fontSize: 11,
     color: "#546e7a",
-    marginBottom: 6,
   },
   solutionValue: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 600,
     color: "#2e7d32",
   },
   solutionValueLarge: {
-    fontSize: 26,
+    fontSize: 22,
     fontWeight: 600,
     color: "#2e7d32",
   },
@@ -319,6 +415,19 @@ export function ProposalPDF({ data, logoBase64 }: ProposalPDFProps) {
             Consolidate your debts and unlock cash from your home
           </Text>
 
+          {/* Goals Section */}
+          {data.goals && data.goals.length > 0 && (
+            <View style={styles.goalsSection}>
+              <Text style={styles.goalsTitle}>Your Financial Goals</Text>
+              {data.goals.map((goal, index) => (
+                <View key={index} style={styles.goalItem}>
+                  <Text style={styles.goalCheckmark}>✓</Text>
+                  <Text style={styles.goalText}>{goal}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+
           <View style={styles.benefitsGrid}>
             <View style={styles.benefitCard}>
               <Text style={styles.benefitLabel}>Monthly Savings</Text>
@@ -344,39 +453,30 @@ export function ProposalPDF({ data, logoBase64 }: ProposalPDFProps) {
           </View>
         </View>
 
-        {/* Current Debts Section */}
-        <View style={styles.section}>
-          {/* Keep title with header row */}
-          <View wrap={false}>
-            <Text style={styles.sectionTitle}>Your Current Situation</Text>
-
-            <View style={styles.comparisonHeader}>
-              <Text style={styles.debtName}>Creditor</Text>
-              <Text style={styles.amount}>Balance</Text>
-              <Text style={styles.amount}>Monthly Payment</Text>
-            </View>
-          </View>
-
-          {data.liabilities.map((liability) => (
-            <View key={liability.id} style={styles.comparisonRow} wrap={false}>
-              <Text style={styles.debtName}>{liability.lender}</Text>
-              <Text style={styles.amount}>
-                {formatCurrency(liability.balance)}
+        {/* Pain Section - Current Financial Burden */}
+        <View style={styles.painSection} wrap={false}>
+          <Text style={styles.painTitle}>
+            ⚠️ Your Current Financial Burden
+          </Text>
+          <View style={styles.painStatsGrid}>
+            <View style={styles.painStat}>
+              <Text style={styles.painStatLabel}>Total Debt Obligations</Text>
+              <Text style={styles.painStatValue}>
+                {formatCurrency(data.currentTotalBalance)}
               </Text>
-              <Text style={styles.amount}>
-                {formatCurrency(liability.payment)}
+              <Text style={styles.painDescription}>
+                Spread across {data.liabilities.length} different creditors
               </Text>
             </View>
-          ))}
-
-          <View style={styles.totalRow} wrap={false}>
-            <Text style={styles.debtName}>Total Current Obligations</Text>
-            <Text style={styles.amount}>
-              {formatCurrency(data.currentTotalBalance)}
-            </Text>
-            <Text style={styles.amount}>
-              {formatCurrency(data.currentTotalPayment)}
-            </Text>
+            <View style={styles.painStat}>
+              <Text style={styles.painStatLabel}>Current Monthly Payments</Text>
+              <Text style={styles.painStatValue}>
+                {formatCurrency(data.currentTotalPayment)}
+              </Text>
+              <Text style={styles.painDescription}>
+                Putting strain on your monthly budget
+              </Text>
+            </View>
           </View>
         </View>
 
@@ -384,7 +484,9 @@ export function ProposalPDF({ data, logoBase64 }: ProposalPDFProps) {
         <View style={styles.section}>
           {/* Wrap title + solution box together to prevent page break between them */}
           <View wrap={false}>
-            <Text style={styles.sectionTitle}>Your New Consolidated Mortgage</Text>
+            <Text style={styles.sectionTitle}>
+              Your New Consolidated Mortgage - The Solution
+            </Text>
 
             <View style={styles.proposedSolution}>
               <View style={styles.solutionGrid}>
@@ -452,6 +554,60 @@ export function ProposalPDF({ data, logoBase64 }: ProposalPDFProps) {
                 </Text>
               </View>
             </View>
+          </View>
+        </View>
+
+        {/* Current Debts Section - Detailed Breakdown */}
+        <View style={styles.section} break>
+          <Text style={styles.sectionTitle}>
+            Current Debts - Detailed Breakdown
+          </Text>
+
+          {/* Credit Warning Explanation */}
+          <View style={styles.creditWarningBox} wrap={false}>
+            <Text style={styles.creditWarningText}>
+              <Text style={styles.creditWarningBold}>⚠️ Credit Impact Notice: </Text>
+              Debts marked with the warning icon are factors that typically impact
+              credit scores. High credit card balances, missed payments, and accounts
+              in collections commonly affect credit ratings. By consolidating these
+              debts, you can improve your credit utilization over time.
+            </Text>
+          </View>
+
+          {/* Keep title with header row */}
+          <View wrap={false}>
+            <View style={styles.comparisonHeader}>
+              <Text style={styles.creditIcon}>⚠️</Text>
+              <Text style={styles.debtName}>Creditor</Text>
+              <Text style={styles.amount}>Balance</Text>
+              <Text style={styles.amount}>Monthly Payment</Text>
+            </View>
+          </View>
+
+          {data.liabilities.map((liability) => (
+            <View key={liability.id} style={styles.comparisonRow} wrap={false}>
+              <Text style={styles.creditIcon}>
+                {liability.impacts_credit ? "⚠️" : ""}
+              </Text>
+              <Text style={styles.debtName}>{liability.lender}</Text>
+              <Text style={styles.amount}>
+                {formatCurrency(liability.balance)}
+              </Text>
+              <Text style={styles.amount}>
+                {formatCurrency(liability.payment)}
+              </Text>
+            </View>
+          ))}
+
+          <View style={styles.totalRow} wrap={false}>
+            <Text style={styles.creditIcon}></Text>
+            <Text style={styles.debtName}>Total Current Obligations</Text>
+            <Text style={styles.amount}>
+              {formatCurrency(data.currentTotalBalance)}
+            </Text>
+            <Text style={styles.amount}>
+              {formatCurrency(data.currentTotalPayment)}
+            </Text>
           </View>
         </View>
 

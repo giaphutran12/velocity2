@@ -5,11 +5,13 @@ export interface Liability {
   lender: string;
   balance: number;
   payment: number;
+  impacts_credit: boolean;
 }
 
 export interface ProposalData {
   borrowerName: string;
   liabilities: Liability[];
+  goals: string[];
   currentTotalBalance: number;
   currentTotalPayment: number;
   newMortgageAmount: number;
@@ -63,45 +65,36 @@ const ProposalPrint = forwardRef<HTMLDivElement, ProposalPrintProps>(
               box-shadow: none;
             }
 
-            /* Small sections that should never split */
             .hero-section,
             .benefit-card,
             .cta-section,
             .proposed-solution,
             .loan-details,
             .footer,
-            .total-row {
+            .total-row,
+            .goals-section,
+            .pain-section {
               break-inside: avoid;
               page-break-inside: avoid;
             }
-            /*Individual debt rows stay together*/
+
             .comparison-row {
               break-inside: avoid;
             }
-            /*Section titel stays with first row*/
+
             .section-title {
               break-after: avoid;
             }
 
-            /*page margin - creates space at bottom for footer*/
+            .debts-page {
+              page-break-before: always;
+            }
+
             @page {
               margin-bottom: 60px;
               margin-top: 60px;
-              /*Hider broser's default header/footer */
-              @top-left {
-                content: none;
-              }
-              @top-right {
-                content: none;
-              }
-              @bottom-left {
-                content: none;
-              }
-              @bottom-right {
-                content: none;
-              }
             }
-            /*repeating footer on every page */
+
             .footer {
               position: fixed;
               bottom: 0;
@@ -150,7 +143,41 @@ const ProposalPrint = forwardRef<HTMLDivElement, ProposalPrintProps>(
           .hero-subtitle {
             font-size: 18px;
             color: #546e7a;
-            margin-bottom: 40px;
+            margin-bottom: 30px;
+          }
+
+          .goals-section {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            text-align: left;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+          }
+
+          .goals-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1e3c72;
+            margin-bottom: 15px;
+          }
+
+          .goal-item {
+            padding: 8px 0;
+            padding-left: 25px;
+            position: relative;
+            font-size: 15px;
+            line-height: 1.8;
+            color: #37474f;
+          }
+
+          .goal-item:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #2e7d32;
+            font-weight: 700;
+            font-size: 18px;
           }
 
           .benefits-grid {
@@ -193,6 +220,58 @@ const ProposalPrint = forwardRef<HTMLDivElement, ProposalPrintProps>(
             margin-top: 5px;
           }
 
+          /* Pain Section - Red */
+          .pain-section {
+            background: linear-gradient(135deg, #ffebee 0%, #fce4ec 100%);
+            padding: 40px 50px;
+            border-left: 6px solid #c62828;
+            margin: 40px 0;
+          }
+
+          .pain-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #c62828;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+          }
+
+          .pain-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 25px;
+            margin-top: 20px;
+          }
+
+          .pain-stat {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(198, 40, 40, 0.15);
+          }
+
+          .pain-stat-label {
+            font-size: 14px;
+            color: #78909c;
+            margin-bottom: 8px;
+            font-weight: 600;
+          }
+
+          .pain-stat-value {
+            font-size: 36px;
+            font-weight: 900;
+            color: #c62828;
+          }
+
+          .pain-description {
+            font-size: 14px;
+            color: #78909c;
+            margin-top: 8px;
+            line-height: 1.5;
+          }
+
           .section {
             padding: 40px 50px;
           }
@@ -206,56 +285,12 @@ const ProposalPrint = forwardRef<HTMLDivElement, ProposalPrintProps>(
             border-bottom: 3px solid #e3f2fd;
           }
 
-          .comparison-header {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr;
-            gap: 15px;
-            padding: 15px;
-            background: #f5f5f5;
-            font-weight: 700;
-            font-size: 13px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: #546e7a;
-            border-radius: 6px 6px 0 0;
-          }
-
-          .comparison-row {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr;
-            gap: 15px;
-            padding: 18px 15px;
-            border-bottom: 1px solid #e0e0e0;
-            align-items: center;
-          }
-
-          .debt-name {
-            font-weight: 500;
-            color: #37474f;
-          }
-
-          .amount {
-            text-align: right;
-            font-weight: 600;
-            color: #37474f;
-          }
-
-          .total-row {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr;
-            gap: 15px;
-            padding: 20px 15px;
-            background: #f5f5f5;
-            font-weight: 700;
-            font-size: 16px;
-            border-radius: 0 0 6px 6px;
-          }
-
           .proposed-solution {
             background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%);
             padding: 35px;
             border-radius: 8px;
             margin-top: 30px;
+            border-left: 6px solid #2e7d32;
           }
 
           .solution-grid {
@@ -329,6 +364,77 @@ const ProposalPrint = forwardRef<HTMLDivElement, ProposalPrintProps>(
             color: #37474f;
           }
 
+          /* Debts Page */
+          .debts-page {
+            padding: 40px 50px;
+            background: white;
+          }
+
+          .credit-warning-explanation {
+            background: #fff3e0;
+            border-left: 4px solid #f57c00;
+            padding: 15px 20px;
+            margin-bottom: 25px;
+            border-radius: 4px;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #5d4037;
+          }
+
+          .credit-warning-explanation strong {
+            color: #e65100;
+          }
+
+          .comparison-header {
+            display: grid;
+            grid-template-columns: 40px 2fr 1fr 1fr;
+            gap: 15px;
+            padding: 15px;
+            background: #f5f5f5;
+            font-weight: 700;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #546e7a;
+            border-radius: 6px 6px 0 0;
+          }
+
+          .comparison-row {
+            display: grid;
+            grid-template-columns: 40px 2fr 1fr 1fr;
+            gap: 15px;
+            padding: 18px 15px;
+            border-bottom: 1px solid #e0e0e0;
+            align-items: center;
+          }
+
+          .credit-warning-icon {
+            text-align: center;
+            font-size: 20px;
+          }
+
+          .debt-name {
+            font-weight: 500;
+            color: #37474f;
+          }
+
+          .amount {
+            text-align: right;
+            font-weight: 600;
+            color: #37474f;
+          }
+
+          .total-row {
+            display: grid;
+            grid-template-columns: 40px 2fr 1fr 1fr;
+            gap: 15px;
+            padding: 20px 15px;
+            background: #f5f5f5;
+            font-weight: 700;
+            font-size: 16px;
+            border-radius: 0 0 6px 6px;
+          }
+
           .cta-section {
             background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
             padding: 40px 50px;
@@ -398,6 +504,20 @@ const ProposalPrint = forwardRef<HTMLDivElement, ProposalPrintProps>(
             Consolidate your debts and unlock cash from your home
           </p>
 
+          {/* Goals Section */}
+          {data.goals.length > 0 && (
+            <div className="goals-section">
+              <div className="goals-title">Your Financial Goals</div>
+              <div>
+                {data.goals.map((goal, index) => (
+                  <div key={index} className="goal-item">
+                    {goal}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="benefits-grid">
             <div className="benefit-card">
               <div className="benefit-label">Monthly Savings</div>
@@ -423,38 +543,39 @@ const ProposalPrint = forwardRef<HTMLDivElement, ProposalPrintProps>(
           </div>
         </div>
 
-        {/* Current Debts Section */}
-        <div className="section">
-          <h2 className="section-title">Your Current Situation</h2>
-
-          <div className="comparison-header">
-            <div>Creditor</div>
-            <div style={{ textAlign: "right" }}>Balance</div>
-            <div style={{ textAlign: "right" }}>Monthly Payment</div>
+        {/* Pain Section - Current Financial Burden */}
+        <div className="pain-section">
+          <div className="pain-title">
+            <span>⚠️</span>
+            Your Current Financial Burden
           </div>
-
-          {data.liabilities.map((liability) => (
-            <div key={liability.id} className="comparison-row">
-              <div className="debt-name">{liability.lender}</div>
-              <div className="amount">{formatCurrency(liability.balance)}</div>
-              <div className="amount">{formatCurrency(liability.payment)}</div>
+          <div className="pain-stats">
+            <div className="pain-stat">
+              <div className="pain-stat-label">Total Debt Obligations</div>
+              <div className="pain-stat-value">
+                {formatCurrency(data.currentTotalBalance)}
+              </div>
+              <div className="pain-description">
+                Spread across {data.liabilities.length} different creditors
+              </div>
             </div>
-          ))}
-
-          <div className="total-row">
-            <div>Total Current Obligations</div>
-            <div className="amount">
-              {formatCurrency(data.currentTotalBalance)}
-            </div>
-            <div className="amount">
-              {formatCurrency(data.currentTotalPayment)}
+            <div className="pain-stat">
+              <div className="pain-stat-label">Current Monthly Payments</div>
+              <div className="pain-stat-value">
+                {formatCurrency(data.currentTotalPayment)}
+              </div>
+              <div className="pain-description">
+                Putting strain on your monthly budget
+              </div>
             </div>
           </div>
         </div>
 
         {/* Proposed Solution */}
         <div className="section">
-          <h2 className="section-title">Your New Consolidated Mortgage</h2>
+          <h2 className="section-title">
+            Your New Consolidated Mortgage - The Solution
+          </h2>
 
           <div className="proposed-solution">
             <div className="solution-grid">
@@ -520,6 +641,49 @@ const ProposalPrint = forwardRef<HTMLDivElement, ProposalPrintProps>(
                   {formatCurrency(data.estimatedFees)}
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Detailed Debts Page */}
+        <div className="debts-page">
+          <h2 className="section-title">Current Debts - Detailed Breakdown</h2>
+
+          <div className="credit-warning-explanation">
+            <strong>⚠️ Credit Impact Notice:</strong> Debts marked with the
+            warning icon are factors that typically impact credit scores. High
+            credit card balances (especially near the limit), missed payments,
+            and accounts in collections commonly affect credit ratings. By
+            consolidating these debts, you can improve your credit utilization
+            and payment history over time.
+          </div>
+
+          <div className="comparison-header">
+            <div style={{ textAlign: "center" }}>⚠️</div>
+            <div>Creditor</div>
+            <div style={{ textAlign: "right" }}>Balance</div>
+            <div style={{ textAlign: "right" }}>Monthly Payment</div>
+          </div>
+
+          {data.liabilities.map((liability) => (
+            <div key={liability.id} className="comparison-row">
+              <div className="credit-warning-icon">
+                {liability.impacts_credit ? "⚠️" : ""}
+              </div>
+              <div className="debt-name">{liability.lender}</div>
+              <div className="amount">{formatCurrency(liability.balance)}</div>
+              <div className="amount">{formatCurrency(liability.payment)}</div>
+            </div>
+          ))}
+
+          <div className="total-row">
+            <div></div>
+            <div>Total Current Obligations</div>
+            <div className="amount">
+              {formatCurrency(data.currentTotalBalance)}
+            </div>
+            <div className="amount">
+              {formatCurrency(data.currentTotalPayment)}
             </div>
           </div>
         </div>
