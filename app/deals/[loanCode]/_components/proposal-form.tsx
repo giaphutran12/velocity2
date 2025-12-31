@@ -17,13 +17,12 @@ import {
   mergeWithOverrides,
 } from "@/lib/proposal-types";
 
-// Velocity liability with in_credit_bureau
+// Velocity liability from Supabase
 interface VelocityLiability {
   id: string;
   lender: string;
   balance: number;
   payment: number;
-  in_credit_bureau: boolean;
 }
 
 interface DealData {
@@ -89,7 +88,6 @@ export default function ProposalForm({ deal }: ProposalFormProps) {
       lender: l.lender,
       balance: l.balance,
       payment: l.payment,
-      in_credit_bureau: l.in_credit_bureau,
     })),
     deal.proposalOverrides
   );
@@ -131,7 +129,7 @@ export default function ProposalForm({ deal }: ProposalFormProps) {
       // Only include fields that differ from original
       if (dl.balance !== orig.balance) override.balance = dl.balance;
       if (dl.payment !== orig.payment) override.payment = dl.payment;
-      if (dl.impacts_credit !== orig.in_credit_bureau) override.impacts_credit = dl.impacts_credit;
+      if (dl.impacts_credit) override.impacts_credit = true;
       if (dl.excluded) override.excluded = true;
 
       // Only add if there are actual overrides

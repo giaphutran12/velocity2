@@ -9,7 +9,13 @@ import {
 } from "@react-pdf/renderer";
 import { ProposalData } from "@/lib/proposal-pdf-types";
 
-Font.register({ family: "OpenSans", fonts: [300, 400, 500, 600, 700].map((w) => ({ src: `https://cdn.jsdelivr.net/npm/@fontsource/open-sans/files/open-sans-latin-${w}-normal.woff`, fontWeight: w })) });
+Font.register({
+  family: "OpenSans",
+  fonts: [300, 400, 500, 600, 700].map((w) => ({
+    src: `https://cdn.jsdelivr.net/npm/@fontsource/open-sans/files/open-sans-latin-${w}-normal.woff`,
+    fontWeight: w,
+  })),
+});
 
 const styles = StyleSheet.create({
   page: {
@@ -54,36 +60,29 @@ const styles = StyleSheet.create({
     color: "#546e7a",
     marginBottom: 12,
   },
-  // Goals Section (compact inline row)
+  // Goals Section (vertical list)
   goalsSection: {
     backgroundColor: "white",
-    padding: "8px 12px",
+    padding: "10px 20px",
     borderRadius: 6,
     marginBottom: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    flexWrap: "wrap",
+    flexDirection: "column",
+    gap: 4,
   },
   goalItem: {
     flexDirection: "row",
     alignItems: "center",
-    marginRight: 12,
   },
   goalCheckmark: {
-    color: "#2e7d32",
-    fontWeight: 600,
-    fontSize: 9,
-    marginRight: 4,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "#37474f",
+    marginRight: 6,
   },
   goalText: {
-    fontSize: 9,
+    fontSize: 10,
     color: "#37474f",
-  },
-  goalSeparator: {
-    fontSize: 9,
-    color: "#78909c",
-    marginHorizontal: 8,
   },
   benefitsGrid: {
     flexDirection: "row",
@@ -142,6 +141,13 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     padding: 12,
     borderRadius: 6,
+  },
+  painStatHighlight: {
+    flex: 1,
+    backgroundColor: "white",
+    padding: 12,
+    borderRadius: 6,
+    border: "1px solid black",
   },
   painStatLabel: {
     fontSize: 10,
@@ -208,10 +214,24 @@ const styles = StyleSheet.create({
     borderBottom: "1px solid #e0e0e0",
     alignItems: "center",
   },
-  creditIcon: {
-    width: 30,
+  impactingCreditCol: {
+    width: 70,
     textAlign: "center",
-    fontSize: 14,
+    fontSize: 10,
+  },
+  impactingCreditHeader: {
+    width: 70,
+    textAlign: "center",
+    fontSize: 10,
+    color: "#dc2626",
+    fontWeight: 600,
+  },
+  impactingCreditYes: {
+    width: 70,
+    textAlign: "center",
+    fontSize: 10,
+    color: "#dc2626",
+    fontWeight: 600,
   },
   debtName: {
     flex: 2,
@@ -233,111 +253,124 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 6,
     borderBottomRightRadius: 6,
   },
-  // Proposed Solution - 2x2 grid (compact)
-  proposedSolution: {
+  // Proposed Solution Section (Green) - matches pain section style
+  solutionSection: {
     backgroundColor: "#e8f5e9",
-    padding: 18,
-    borderRadius: 6,
-    marginTop: 10,
+    padding: "15px 50px",
     borderLeft: "5px solid #2e7d32",
+    marginVertical: 12,
   },
-  solutionGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-  },
-  solutionItem: {
-    width: "50%",
-    padding: "8px 8px",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  solutionLabel: {
-    fontSize: 10,
-    color: "#546e7a",
-  },
-  solutionValue: {
+  solutionTitle: {
     fontSize: 14,
     fontWeight: 600,
     color: "#2e7d32",
+    marginBottom: 10,
   },
-  solutionValueLarge: {
-    fontSize: 18,
-    fontWeight: 600,
-    color: "#2e7d32",
+  solutionStatsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
   },
-  // Loan Details - 3 columns (compact)
-  loanDetails: {
-    backgroundColor: "#fafafa",
+  solutionStat: {
+    width: "48%",
+    backgroundColor: "white",
     padding: 12,
     borderRadius: 6,
-    marginTop: 10,
+  },
+  solutionStatHighlight: {
+    width: "48%",
+    backgroundColor: "white",
+    padding: 12,
+    borderRadius: 6,
+    border: "1px solid black",
+  },
+  solutionStatLabel: {
+    fontSize: 10,
+    color: "#78909c",
+    marginBottom: 4,
+    fontWeight: 500,
+  },
+  solutionStatValue: {
+    fontSize: 22,
+    fontWeight: 700,
+    color: "#2e7d32",
+  },
+  solutionStatValueSmall: {
+    fontSize: 16,
+    fontWeight: 700,
+    color: "#2e7d32",
+  },
+  // Loan Details Section (Gray) - matches pain/solution section style
+  loanDetailsSection: {
+    backgroundColor: "#f5f5f5",
+    padding: "15px 50px",
+    borderLeft: "5px solid #78909c",
+    marginVertical: 12,
   },
   loanDetailsTitle: {
-    fontSize: 11,
-    marginBottom: 8,
-    color: "#1e3c72",
+    fontSize: 14,
     fontWeight: 600,
+    color: "#546e7a",
+    marginBottom: 10,
   },
   detailsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
+    gap: 10,
   },
   detailItem: {
-    width: "33.33%",
+    width: "30%",
     textAlign: "center",
-    padding: "6px 4px",
+    padding: 10,
+    backgroundColor: "white",
+    borderRadius: 6,
   },
   detailLabel: {
     fontSize: 8,
     textTransform: "uppercase",
     letterSpacing: 0.4,
     color: "#78909c",
-    marginBottom: 3,
+    marginBottom: 4,
     fontWeight: 500,
   },
   detailValue: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: 600,
     color: "#37474f",
   },
   // CTA Section
   ctaSection: {
     backgroundColor: "#1e3c72",
-    padding: "35px 50px",
+    padding: "20px 50px",
     textAlign: "center",
   },
   ctaTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 600,
-    marginBottom: 12,
+    marginBottom: 8,
     color: "white",
   },
   ctaText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: 300,
-    marginBottom: 20,
+    marginBottom: 12,
     color: "white",
   },
   contactInfo: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 500,
-    marginTop: 8,
+    marginTop: 4,
     color: "white",
   },
-  // Disclaimer
+  // Disclaimer (inside CTA)
   disclaimer: {
-    padding: "25px 50px",
-    backgroundColor: "#f8f9fa",
-    fontSize: 8,
-    lineHeight: 1.5,
-    color: "#546e7a",
-  },
-  disclaimerTitle: {
-    fontWeight: 600,
-    marginBottom: 8,
-    fontSize: 9,
-    color: "#37474f",
+    marginTop: 15,
+    paddingTop: 12,
+    borderTop: "1px solid #546e7a",
+    fontSize: 7,
+    lineHeight: 1.4,
+    color: "rgba(255,255,255,0.6)",
+    textAlign: "center",
   },
   // Footer - at end of document (not fixed)
   footer: {
@@ -369,6 +402,8 @@ const formatPercent = (rate: number) => {
 };
 
 export function ProposalPDF({ data, logoBase64 }: ProposalPDFProps) {
+  const hasAnyCreditImpact = data.liabilities.some((l) => l.impacts_credit);
+
   return (
     <Document>
       <Page size="A4" style={styles.page}>
@@ -389,12 +424,12 @@ export function ProposalPDF({ data, logoBase64 }: ProposalPDFProps) {
             Consolidate your debts and unlock cash from your home
           </Text>
 
-          {/* Goals Section - inline row */}
+          {/* Goals Section - vertical list */}
           {data.goals && data.goals.length > 0 && (
             <View style={styles.goalsSection}>
               {data.goals.map((goal, index) => (
                 <View key={index} style={styles.goalItem}>
-                  <Text style={styles.goalCheckmark}>✓</Text>
+                  <View style={styles.goalCheckmark} />
                   <Text style={styles.goalText}>{goal}</Text>
                 </View>
               ))}
@@ -439,7 +474,7 @@ export function ProposalPDF({ data, logoBase64 }: ProposalPDFProps) {
                 Spread across {data.liabilities.length} different creditors
               </Text>
             </View>
-            <View style={styles.painStat}>
+            <View style={styles.painStatHighlight}>
               <Text style={styles.painStatLabel}>Current Monthly Payments</Text>
               <Text style={styles.painStatValue}>
                 {formatCurrency(data.currentTotalPayment)}
@@ -451,110 +486,93 @@ export function ProposalPDF({ data, logoBase64 }: ProposalPDFProps) {
           </View>
         </View>
 
-        {/* Proposed Solution */}
-        <View style={styles.section}>
-          {/* Wrap title + solution box together to prevent page break between them */}
-          <View wrap={false}>
-            <Text style={styles.sectionTitle}>
-              Your New Consolidated Mortgage - The Solution
-            </Text>
-
-            <View style={styles.proposedSolution}>
-              <View style={styles.solutionGrid}>
-                <View style={styles.solutionItem}>
-                  <Text style={styles.solutionLabel}>New Mortgage Amount</Text>
-                  <Text style={styles.solutionValueLarge}>
-                    {formatCurrency(data.newMortgageAmount)}
-                  </Text>
-                </View>
-                <View style={styles.solutionItem}>
-                  <Text style={styles.solutionLabel}>New Monthly Payment</Text>
-                  <Text style={styles.solutionValueLarge}>
-                    {formatCurrency(data.newMonthlyPayment)}
-                  </Text>
-                </View>
-                <View style={styles.solutionItem}>
-                  <Text style={styles.solutionLabel}>Debts Paid Off</Text>
-                  <Text style={styles.solutionValue}>
-                    {formatCurrency(data.currentTotalBalance)}
-                  </Text>
-                </View>
-                <View style={styles.solutionItem}>
-                  <Text style={styles.solutionLabel}>Cash Advance to You</Text>
-                  <Text style={styles.solutionValue}>
-                    {formatCurrency(data.cashBack)}
-                  </Text>
-                </View>
-              </View>
+        {/* Proposed Solution Section (Green) - matches pain section style */}
+        <View style={styles.solutionSection} wrap={false}>
+          <Text style={styles.solutionTitle}>
+            Your New Consolidated Mortgage - The Solution
+          </Text>
+          <View style={styles.solutionStatsGrid}>
+            <View style={styles.solutionStat}>
+              <Text style={styles.solutionStatLabel}>New Mortgage Amount</Text>
+              <Text style={styles.solutionStatValue}>
+                {formatCurrency(data.newMortgageAmount)}
+              </Text>
+            </View>
+            <View style={styles.solutionStatHighlight}>
+              <Text style={styles.solutionStatLabel}>New Monthly Payment</Text>
+              <Text style={styles.solutionStatValue}>
+                {formatCurrency(data.newMonthlyPayment)}
+              </Text>
+            </View>
+            <View style={styles.solutionStat}>
+              <Text style={styles.solutionStatLabel}>Debts Paid Off</Text>
+              <Text style={styles.solutionStatValueSmall}>
+                {formatCurrency(data.currentTotalBalance)}
+              </Text>
+            </View>
+            <View style={styles.solutionStat}>
+              <Text style={styles.solutionStatLabel}>Cash Advance to You</Text>
+              <Text style={styles.solutionStatValueSmall}>
+                {formatCurrency(data.cashBack)}
+              </Text>
             </View>
           </View>
+        </View>
 
-          <View style={styles.loanDetails} wrap={false}>
-            <Text style={styles.loanDetailsTitle}>Loan Details</Text>
-            <View style={styles.detailsGrid}>
-              <View style={styles.detailItem}>
-                <Text style={styles.detailLabel}>Interest Rate</Text>
-                <Text style={styles.detailValue}>
-                  {formatPercent(data.newRate)}
-                </Text>
-              </View>
-              <View style={styles.detailItem}>
-                <Text style={styles.detailLabel}>Term</Text>
-                <Text style={styles.detailValue}>{data.termMonths} Months</Text>
-              </View>
-              <View style={styles.detailItem}>
-                <Text style={styles.detailLabel}>Amortization</Text>
-                <Text style={styles.detailValue}>
-                  {data.amortizationMonths} Months
-                </Text>
-              </View>
-              <View style={styles.detailItem}>
-                <Text style={styles.detailLabel}>APR</Text>
-                <Text style={styles.detailValue}>
-                  {formatPercent(data.apr)}
-                </Text>
-              </View>
-              <View style={styles.detailItem}>
-                <Text style={styles.detailLabel}>Total Interest</Text>
-                <Text style={styles.detailValue}>
-                  {formatCurrency(data.totalInterest)}
-                </Text>
-              </View>
-              <View style={styles.detailItem}>
-                <Text style={styles.detailLabel}>Estimated Fees</Text>
-                <Text style={styles.detailValue}>
-                  {formatCurrency(data.estimatedFees)}
-                </Text>
-              </View>
+        {/* Loan Details Section (Gray) - matches pain/solution section style */}
+        <View style={styles.loanDetailsSection} wrap={false}>
+          <Text style={styles.loanDetailsTitle}>Loan Details</Text>
+          <View style={styles.detailsGrid}>
+            <View style={styles.detailItem}>
+              <Text style={styles.detailLabel}>Interest Rate</Text>
+              <Text style={styles.detailValue}>
+                {formatPercent(data.newRate)}
+              </Text>
+            </View>
+            <View style={styles.detailItem}>
+              <Text style={styles.detailLabel}>Term</Text>
+              <Text style={styles.detailValue}>{data.termMonths} Months</Text>
+            </View>
+            <View style={styles.detailItem}>
+              <Text style={styles.detailLabel}>Amortization</Text>
+              <Text style={styles.detailValue}>
+                {data.amortizationMonths} Months
+              </Text>
+            </View>
+            <View style={styles.detailItem}>
+              <Text style={styles.detailLabel}>APR</Text>
+              <Text style={styles.detailValue}>{formatPercent(data.apr)}</Text>
+            </View>
+            <View style={styles.detailItem}>
+              <Text style={styles.detailLabel}>Total Interest</Text>
+              <Text style={styles.detailValue}>
+                {formatCurrency(data.totalInterest)}
+              </Text>
+            </View>
+            <View style={styles.detailItem}>
+              <Text style={styles.detailLabel}>Estimated Fees</Text>
+              <Text style={styles.detailValue}>
+                {formatCurrency(data.estimatedFees)}
+              </Text>
             </View>
           </View>
         </View>
 
         {/* Current Debts Section - Detailed Breakdown */}
-        <View style={styles.section} break>
+        <View style={styles.section}>
           <Text style={styles.sectionTitle}>
             Current Debts - Detailed Breakdown
           </Text>
 
-          {/* Credit Warning Explanation */}
-          <View style={styles.creditWarningBox} wrap={false}>
-            <Text style={styles.creditWarningText}>
-              <Text style={styles.creditWarningBold}>
-                ⚠️ Credit Impact Notice:{" "}
-              </Text>
-              Debts marked with the warning icon are factors that typically
-              impact credit scores. High credit card balances, missed payments,
-              and accounts in collections commonly affect credit ratings. By
-              consolidating these debts, you can improve your credit utilization
-              over time.
-            </Text>
-          </View>
-
           {/* Keep title with header row */}
           <View wrap={false}>
             <View style={styles.comparisonHeader}>
-              <Text style={styles.creditIcon}>⚠️</Text>
               <Text style={styles.debtName}>Creditor</Text>
+              {hasAnyCreditImpact && (
+                <Text style={styles.impactingCreditHeader}>
+                  Impacting Credit
+                </Text>
+              )}
               <Text style={styles.amount}>Balance</Text>
               <Text style={styles.amount}>Monthly Payment</Text>
             </View>
@@ -562,10 +580,12 @@ export function ProposalPDF({ data, logoBase64 }: ProposalPDFProps) {
 
           {data.liabilities.map((liability) => (
             <View key={liability.id} style={styles.comparisonRow} wrap={false}>
-              <Text style={styles.creditIcon}>
-                {liability.impacts_credit ? "⚠️" : ""}
-              </Text>
               <Text style={styles.debtName}>{liability.lender}</Text>
+              {hasAnyCreditImpact && (
+                <Text style={styles.impactingCreditYes}>
+                  {liability.impacts_credit ? "Yes" : ""}
+                </Text>
+              )}
               <Text style={styles.amount}>
                 {formatCurrency(liability.balance)}
               </Text>
@@ -576,8 +596,10 @@ export function ProposalPDF({ data, logoBase64 }: ProposalPDFProps) {
           ))}
 
           <View style={styles.totalRow} wrap={false}>
-            <Text style={styles.creditIcon}></Text>
             <Text style={styles.debtName}>Total Current Obligations</Text>
+            {hasAnyCreditImpact && (
+              <Text style={styles.impactingCreditCol}></Text>
+            )}
             <Text style={styles.amount}>
               {formatCurrency(data.currentTotalBalance)}
             </Text>
@@ -587,26 +609,23 @@ export function ProposalPDF({ data, logoBase64 }: ProposalPDFProps) {
           </View>
         </View>
 
-        {/* CTA Section */}
+        {/* CTA Section with Disclaimer */}
         <View style={styles.ctaSection} wrap={false}>
           <Text style={styles.ctaTitle}>Ready to Move Forward?</Text>
           <Text style={styles.ctaText}>
             Let&apos;s get started on your application today
           </Text>
-          <Text style={styles.contactInfo}>1.800.288.2764</Text>
+          <Text style={styles.contactInfo}>1-800-288-2764</Text>
+          <Text style={styles.contactInfo}>bluepearl.ca</Text>
           <Text style={styles.contactInfo}>info@bluepearlmortgage.ca</Text>
-        </View>
-
-        {/* Disclaimer - force new page to prevent cutoff */}
-        <View style={styles.disclaimer} break>
-          <Text style={styles.disclaimerTitle}>Important Disclosure</Text>
-          <Text>Blue Pearl Mortgage Group&apos;s intent is to always provide full disclosure of our loan offerings. Borrowers are provided with all necessary disclosure prior to entering any obligation. We are not affiliated with any financial institutions, which include banks, credit unions, alternative and private lenders. The rates and scenarios shown on the pages of this sample solution are only applicable to loans being processed by Blue Pearl Mortgage Group. This example is for informational purposes only; it&apos;s not an offer to make a loan or the approval of any loan terms. The payment calculations shown here are simply estimates and are based upon the unverified information as shared above. Blue Pearl Mortgage Group and its representatives have taken reasonable care in providing this example but do not guarantee accuracy or completeness. Information is provided with no warranty, express or implied, and all such warranties are expressly disclaimed. We assume no liability for any loss, damage or expense from errors or omissions in these materials, whether arising from use or non-use of the information. Blue Pearl Mortgage Group is not responsible for any loss, injury, claim, liability, or damage related to your use of this proposal or any information contained in this document.</Text>
-          <Text style={{ marginTop: 8 }}>Licensing: British Columbia Brokerage #X300317 • Alberta Brokerage #389306 • Saskatchewan Brokerage #316807 • Ontario FSCO License #12890</Text>
-        </View>
-
-        {/* Footer - only appears at end of document */}
-        <View style={styles.footer}>
-          <Text>© 2025 Blue Pearl Inc. All rights reserved.</Text>
+          <View style={styles.disclaimer}>
+            <Text>
+              This proposal is for informational purposes only and is not an
+              offer or approval of loan terms. Estimates are based on unverified
+              information; accuracy is not guaranteed. Licensed in BC #X300317 •
+              AB #389306 • SK #316807 • ON #12890
+            </Text>
+          </View>
         </View>
       </Page>
     </Document>

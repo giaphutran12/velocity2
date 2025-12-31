@@ -3,7 +3,7 @@
 export interface LiabilityOverride {
   balance?: number;         // undefined = use Velocity value
   payment?: number;         // undefined = use Velocity value
-  impacts_credit?: boolean; // undefined = use Velocity's in_credit_bureau
+  impacts_credit?: boolean; // undefined = false (broker manually checks)
   excluded?: boolean;       // undefined = false (included)
 }
 
@@ -39,7 +39,6 @@ export function mergeWithOverrides(
     lender: string | null;
     balance: number | null;
     payment: number | null;
-    in_credit_bureau: boolean;
   }>,
   overrides: ProposalOverrides | null
 ): DisplayLiability[] {
@@ -47,7 +46,7 @@ export function mergeWithOverrides(
     const override = overrides?.liabilities?.[vl.id];
     const balance = override?.balance ?? vl.balance ?? 0;
     const payment = override?.payment ?? vl.payment ?? 0;
-    const impacts_credit = override?.impacts_credit ?? vl.in_credit_bureau;
+    const impacts_credit = override?.impacts_credit ?? false;
     const excluded = override?.excluded ?? false;
 
     return {
@@ -59,11 +58,11 @@ export function mergeWithOverrides(
       excluded,
       original_balance: vl.balance ?? 0,
       original_payment: vl.payment ?? 0,
-      original_impacts_credit: vl.in_credit_bureau,
+      original_impacts_credit: false,
       is_modified:
         balance !== (vl.balance ?? 0) ||
         payment !== (vl.payment ?? 0) ||
-        impacts_credit !== vl.in_credit_bureau,
+        (override?.impacts_credit !== undefined),
     };
   });
 }

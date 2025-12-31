@@ -58,7 +58,7 @@ export default async function DealDetailPage({ params }: PageProps) {
     ? `${primaryBorrower.first_name || ""} ${primaryBorrower.last_name || ""}`.trim()
     : "Client";
 
-  // Flatten all liabilities from all borrowers (include in_credit_bureau for proposal overrides)
+  // Flatten all liabilities from all borrowers
   const allLiabilities =
     deal.borrowers?.flatMap(
       (b: {
@@ -67,7 +67,6 @@ export default async function DealDetailPage({ params }: PageProps) {
           lender?: string;
           balance?: number;
           payment?: number;
-          in_credit_bureau?: boolean;
         }>;
       }) =>
         (b.liabilities || []).map((l) => ({
@@ -75,7 +74,6 @@ export default async function DealDetailPage({ params }: PageProps) {
           lender: l.lender || "Unknown",
           balance: l.balance || 0,
           payment: l.payment || 0,
-          in_credit_bureau: l.in_credit_bureau ?? false,
         }))
     ) || [];
 
