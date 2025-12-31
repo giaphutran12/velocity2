@@ -197,11 +197,12 @@ export async function listCallRecords(
 }
 
 /**
- * Get RingSense insights for a recording
+ * Get RingSense insights for a recording (with retry on rate limit)
  */
 export async function getRecordingInsights(
   sourceRecordId: string,
-  domain: string = "pbx"
+  domain: string = "pbx",
+  retryCount: number = 0
 ): Promise<RCInsightsResponse | null> {
   const token = await getAccessToken();
   const accountId = process.env.RC_ACCOUNT_ID || "~";
@@ -216,6 +217,12 @@ export async function getRecordingInsights(
     if (response.status === 404) {
       // No insights available for this recording
       return null;
+    }
+    if (response.status === 429 && retryCount < 3) {
+      // Rate limited - wait 65s and retry
+      console.log(`Rate limited on ${sourceRecordId}, waiting 65s before retry ${retryCount + 1}/3`);
+      await new Promise((r) => setTimeout(r, 65000));
+      return getRecordingInsights(sourceRecordId, domain, retryCount + 1);
     }
     const text = await response.text();
     console.error(`RC Insights failed for ${sourceRecordId}: ${response.status} - ${text}`);
@@ -246,9 +253,15 @@ export async function fetchRecordingsWithInsights(
   });
 
   const recordingsWithInsights: RCInsightsResponse[] = [];
+  const recordingsWithIds = callRecords.filter((r): r is typeof r & { recording: NonNullable<typeof r.recording> } => !!r.recording?.id);
+  console.log(`  Found ${recordingsWithIds.length} recordings with IDs, fetching insights...`);
 
-  for (const record of callRecords) {
-    if (!record.recording?.id) continue;
+  for (let i = 0; i < recordingsWithIds.length; i++) {
+    const record = recordingsWithIds[i];
+
+    if (i % 10 === 0 || i === recordingsWithIds.length - 1) {
+      console.log(`  Insights progress: ${i + 1}/${recordingsWithIds.length}`);
+    }
 
     const insights = await getRecordingInsights(record.recording.id, domain);
 
@@ -265,8 +278,8 @@ export async function fetchRecordingsWithInsights(
       });
     }
 
-    // Rate limiting between API calls
-    await new Promise((r) => setTimeout(r, 300));
+    // Rate limiting between API calls - RC allows ~40 requests/min for insights
+    await new Promise((r) => setTimeout(r, 2000));
   }
 
   return recordingsWithInsights;

@@ -12,6 +12,10 @@ import { fetchRecordingsWithInsights } from "@/lib/ringcentral";
  *
  * @usage
  * ```bash
+ * # Sync ALL brokers with RC mappings (recommended)
+ * curl -H "Authorization: Bearer $CRON_SECRET" \
+ *   "http://localhost:3000/api/cron/sync-rc?extensionId=all"
+ *
  * # Sync default extension (Garry) for last 30 days
  * curl -H "Authorization: Bearer $CRON_SECRET" \
  *   "http://localhost:3000/api/cron/sync-rc"
@@ -25,7 +29,7 @@ import { fetchRecordingsWithInsights } from "@/lib/ringcentral";
  *   "http://localhost:3000/api/cron/sync-rc?dateFrom=2024-12-01T00:00:00Z&dateTo=2024-12-31T23:59:59Z"
  * ```
  *
- * @param extensionId - RC extension ID (default: 660583043 / Garry)
+ * @param extensionId - RC extension ID, or "all" for all mapped brokers (default: 660583043 / Garry)
  * @param dateFrom - ISO date string (default: 30 days ago)
  * @param dateTo - ISO date string (default: now)
  * @param domain - RC domain: pbx|rcv|rcx|nice-incontact|ms-teams (default: pbx)
@@ -125,6 +129,116 @@ function toTimestamp(value: string | undefined | null): string | null {
   return value;
 }
 
+async function syncExtension(
+  supabase: ReturnType<typeof getSupabase>,
+  extensionId: string,
+  domain: string,
+  dateFrom: string,
+  dateTo: string
+): Promise<{
+  extensionId: string;
+  recordingsFound: number;
+  successful: number;
+  failed: number;
+  failedDetails?: Array<{ recordId: string; error: string }>;
+}> {
+  console.log(`Fetching RC recordings for extension ${extensionId} from ${dateFrom} to ${dateTo}`);
+
+  const recordings = await fetchRecordingsWithInsights(extensionId, {
+    dateFrom,
+    dateTo,
+    domain,
+  });
+
+  if (recordings.length === 0) {
+    return { extensionId, recordingsFound: 0, successful: 0, failed: 0 };
+  }
+
+  const results = await Promise.all(
+    recordings.map(async (rec) => {
+      try {
+        const transcriptText = extractTranscriptText(
+          rec.insights?.Transcript as TranscriptEntry[] | undefined
+        );
+
+        const validDomain = validateDomain(rec.domain, domain);
+        const validDirection = normalizeCallDirection(rec.callDirection);
+
+        const { error } = await supabase.from("rc_recordings").upsert(
+          {
+            source_record_id: rec.sourceRecordId,
+            source_session_id: rec.sourceSessionId,
+            title: rec.title,
+            rs_record_uri: rec.rsRecordUri,
+            domain: validDomain,
+            call_direction: validDirection,
+            owner_extension_id: rec.ownerExtensionId,
+            recording_duration_ms: rec.recordingDurationMs,
+            recording_start_time: toTimestamp(rec.recordingStartTime),
+            creation_time: toTimestamp(rec.creationTime),
+            last_modified_time: toTimestamp(rec.lastModifiedTime),
+            speaker_info: rec.speakerInfo ?? [],
+            insights: rec.insights ?? {},
+            transcript_text: transcriptText,
+            audio_content_uri: rec.audioContentUri,
+            synced_at: new Date().toISOString(),
+          },
+          { onConflict: "source_record_id" }
+        );
+
+        if (error) throw error;
+        return { success: true, recordId: rec.sourceRecordId };
+      } catch (error) {
+        const errorMsg = formatError(error);
+        console.error(`Failed to sync record ${rec.sourceRecordId}:`, errorMsg);
+        return { success: false, recordId: rec.sourceRecordId, error: errorMsg };
+      }
+    })
+  );
+
+  const successful = results.filter((r) => r.success);
+  const failed = results.filter((r) => !r.success) as Array<{
+    success: false;
+    recordId: string;
+    error: string;
+  }>;
+
+  // Log failures to database
+  if (failed.length > 0) {
+    await Promise.all(
+      failed.map((f) =>
+        supabase.from("rc_sync_failures").upsert(
+          {
+            source_record_id: f.recordId,
+            extension_id: extensionId,
+            error_message: f.error,
+            failed_at: new Date().toISOString(),
+            resolved: false,
+          },
+          { onConflict: "source_record_id", ignoreDuplicates: false }
+        )
+      )
+    );
+  }
+
+  // Mark successful records as resolved
+  if (successful.length > 0) {
+    const successIds = successful.map((s) => s.recordId);
+    await supabase
+      .from("rc_sync_failures")
+      .update({ resolved: true, retried_at: new Date().toISOString() })
+      .in("source_record_id", successIds);
+  }
+
+  return {
+    extensionId,
+    recordingsFound: recordings.length,
+    successful: successful.length,
+    failed: failed.length,
+    failedDetails: failed.length > 0 ? failed.map((f) => ({ recordId: f.recordId, error: f.error })) : undefined,
+  };
+}
+
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
   if (CRON_SECRET && authHeader !== `Bearer ${CRON_SECRET}`) {
@@ -136,7 +250,7 @@ export async function GET(request: NextRequest) {
 
   // Parse query params
   const GARRY_EXTENSION_ID = "660583043";
-  const extensionId = searchParams.get("extensionId") || GARRY_EXTENSION_ID;
+  const extensionIdParam = searchParams.get("extensionId") || GARRY_EXTENSION_ID;
   const domain = searchParams.get("domain") || "pbx";
 
   // Default date range: last 30 days
@@ -145,23 +259,92 @@ export async function GET(request: NextRequest) {
 
   const dateFrom = searchParams.get("dateFrom") || thirtyDaysAgo.toISOString();
   const dateTo = searchParams.get("dateTo") || now.toISOString();
+  const startFrom = searchParams.get("startFrom"); // Resume from this broker name
+
+  const supabase = getSupabase();
 
   try {
-    // Fetch recordings with insights from RingCentral
-    console.log(`Fetching RC recordings for extension ${extensionId} from ${dateFrom} to ${dateTo}`);
+    // Handle extensionId=all - sync all mapped brokers
+    if (extensionIdParam === "all") {
+      const { data: brokers, error: brokersError } = await supabase
+        .from("vl_brokers")
+        .select("rc_extension_id, name")
+        .not("rc_extension_id", "is", null);
 
-    const recordings = await fetchRecordingsWithInsights(extensionId, {
-      dateFrom,
-      dateTo,
-      domain,
-    });
+      if (brokersError) throw brokersError;
 
-    console.log(`Found ${recordings.length} recordings with insights`);
+      if (!brokers || brokers.length === 0) {
+        return NextResponse.json({
+          message: "No brokers with RC extension mappings found",
+          durationMs: Date.now() - startTime,
+        });
+      }
 
-    if (recordings.length === 0) {
+      // Sort by name for consistent ordering (important for resume)
+      brokers.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+
+      // Resume logic: skip brokers until we find startFrom
+      let brokersToSync = brokers;
+      let skippedCount = 0;
+      if (startFrom) {
+        const startIndex = brokers.findIndex(
+          (b) => b.name?.toLowerCase() === startFrom.toLowerCase()
+        );
+        if (startIndex === -1) {
+          return NextResponse.json(
+            { error: `Broker "${startFrom}" not found. Available: ${brokers.map((b) => b.name).join(", ")}` },
+            { status: 400 }
+          );
+        }
+        brokersToSync = brokers.slice(startIndex);
+        skippedCount = startIndex;
+        console.log(`Resuming from "${startFrom}" (skipping ${skippedCount} brokers)`);
+      }
+
+      console.log(`Syncing ${brokersToSync.length} brokers${skippedCount > 0 ? ` (${skippedCount} skipped)` : ""}...`);
+
+      const allResults = [];
+      for (let i = 0; i < brokersToSync.length; i++) {
+        const broker = brokersToSync[i];
+        const nextBroker = brokersToSync[i + 1]?.name || null;
+        console.log(`\n--- [${i + 1}/${brokersToSync.length}] Syncing ${broker.name} (${broker.rc_extension_id}) ---`);
+        console.log(`    If this fails, resume with: ?extensionId=all&startFrom=${encodeURIComponent(broker.name)}`);
+
+        const result = await syncExtension(supabase, broker.rc_extension_id, domain, dateFrom, dateTo);
+        allResults.push({ brokerName: broker.name, nextBroker, ...result });
+
+        // Rate limiting between brokers
+        await new Promise((r) => setTimeout(r, 2000));
+      }
+
+      const totalRecordings = allResults.reduce((sum, r) => sum + r.recordingsFound, 0);
+      const totalSuccessful = allResults.reduce((sum, r) => sum + r.successful, 0);
+      const totalFailed = allResults.reduce((sum, r) => sum + r.failed, 0);
+
+      return NextResponse.json({
+        message: `Synced ${totalSuccessful}/${totalRecordings} recordings across ${brokersToSync.length} brokers${skippedCount > 0 ? ` (${skippedCount} skipped)` : ""}`,
+        brokersProcessed: brokersToSync.length,
+        brokersSkipped: skippedCount,
+        brokersTotal: brokers.length,
+        totalRecordings,
+        totalSuccessful,
+        totalFailed,
+        dateFrom,
+        dateTo,
+        domain,
+        startedFrom: startFrom || brokers[0]?.name,
+        durationMs: Date.now() - startTime,
+        brokerResults: allResults,
+      });
+    }
+
+    // Single extension sync (original behavior)
+    const result = await syncExtension(supabase, extensionIdParam, domain, dateFrom, dateTo);
+
+    if (result.recordingsFound === 0) {
       return NextResponse.json({
         message: "No recordings found",
-        extensionId,
+        extensionId: extensionIdParam,
         dateFrom,
         dateTo,
         domain,
@@ -169,109 +352,25 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Sync to Supabase
-    const supabase = getSupabase();
-    const results = await Promise.all(
-      recordings.map(async (rec) => {
-        try {
-          const transcriptText = extractTranscriptText(
-            rec.insights?.Transcript as TranscriptEntry[] | undefined
-          );
-
-          // Validate fields to avoid CHECK constraint violations
-          const validDomain = validateDomain(rec.domain, domain);
-          const validDirection = normalizeCallDirection(rec.callDirection);
-
-          const { error } = await supabase.from("rc_recordings").upsert(
-            {
-              source_record_id: rec.sourceRecordId,
-              source_session_id: rec.sourceSessionId,
-              title: rec.title,
-              rs_record_uri: rec.rsRecordUri,
-              domain: validDomain,
-              call_direction: validDirection,
-              owner_extension_id: rec.ownerExtensionId,
-              recording_duration_ms: rec.recordingDurationMs,
-              recording_start_time: toTimestamp(rec.recordingStartTime),
-              creation_time: toTimestamp(rec.creationTime),
-              last_modified_time: toTimestamp(rec.lastModifiedTime),
-              speaker_info: rec.speakerInfo ?? [],
-              insights: rec.insights ?? {},
-              transcript_text: transcriptText,
-              audio_content_uri: rec.audioContentUri,
-              synced_at: new Date().toISOString(),
-            },
-            { onConflict: "source_record_id" }
-          );
-
-          if (error) throw error;
-          return { success: true, recordId: rec.sourceRecordId };
-        } catch (error) {
-          const errorMsg = formatError(error);
-          console.error(`Failed to sync record ${rec.sourceRecordId}:`, errorMsg);
-          return {
-            success: false,
-            recordId: rec.sourceRecordId,
-            error: errorMsg,
-          };
-        }
-      })
-    );
-
-    const successful = results.filter((r) => r.success);
-    const failed = results.filter((r) => !r.success) as Array<{
-      success: false;
-      recordId: string;
-      error: string;
-    }>;
-    const duration = Date.now() - startTime;
-
-    // Log failures to database for retry
-    if (failed.length > 0) {
-      await Promise.all(
-        failed.map((f) =>
-          supabase.from("rc_sync_failures").upsert(
-            {
-              source_record_id: f.recordId,
-              extension_id: extensionId,
-              error_message: f.error,
-              failed_at: new Date().toISOString(),
-              resolved: false,
-            },
-            { onConflict: "source_record_id", ignoreDuplicates: false }
-          )
-        )
-      );
-    }
-
-    // Mark successful records as resolved (if they were previously failed)
-    if (successful.length > 0) {
-      const successIds = successful.map((s) => s.recordId);
-      await supabase
-        .from("rc_sync_failures")
-        .update({ resolved: true, retried_at: new Date().toISOString() })
-        .in("source_record_id", successIds);
-    }
-
     return NextResponse.json({
-      message: `Synced ${successful.length}/${recordings.length} recordings`,
-      extensionId,
+      message: `Synced ${result.successful}/${result.recordingsFound} recordings`,
+      extensionId: extensionIdParam,
       dateFrom,
       dateTo,
       domain,
-      recordingsFound: recordings.length,
-      successful: successful.length,
-      failed: failed.length,
-      failedLogged: failed.length > 0,
-      durationMs: duration,
-      failedDetails: failed.length > 0 ? failed : undefined,
+      recordingsFound: result.recordingsFound,
+      successful: result.successful,
+      failed: result.failed,
+      failedLogged: result.failed > 0,
+      durationMs: Date.now() - startTime,
+      failedDetails: result.failedDetails,
     });
   } catch (error) {
     console.error("RC Cron Sync error:", error);
     return NextResponse.json(
       {
         error: error instanceof Error ? error.message : "Unknown error",
-        extensionId,
+        extensionId: extensionIdParam,
         dateFrom,
         dateTo,
         domain,
