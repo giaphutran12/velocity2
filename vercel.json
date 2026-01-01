@@ -3,6 +3,14 @@
     {
       "path": "/api/cron/sync",
       "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/sync-rc",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/download-rc-audio",
+      "schedule": "*/10 * * * *"
     }
   ]
 }
