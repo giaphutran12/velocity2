@@ -6,11 +6,11 @@
     },
     {
       "path": "/api/cron/sync-rc",
-      "schedule": "*/5 * * * *"
+      "schedule": "* * * * *"
     },
     {
       "path": "/api/cron/download-rc-audio",
-      "schedule": "*/10 * * * *"
+      "schedule": "* * * * *"
     }
   ]
 }
