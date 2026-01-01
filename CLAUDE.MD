@@ -29,6 +29,12 @@
 
 **ALWAYS prefer Nia MCP tools over standard tools when applicable** - saves tokens, time, and improves code quality:
 
+### Research Priority
+
+1. Nia deep research for external docs/APIs
+2. Context7 for library/framework docs
+3. WebSearch/WebFetch as last resort
+
 ## Supabase
 
 - Use Supabase MCP to search for docs related to supabase
