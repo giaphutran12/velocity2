@@ -234,6 +234,13 @@ export async function getRecordingInsights(
 
 /**
  * Fetch call records with RingSense insights
+ * @param extensionId - RC extension ID
+ * @param options.dateFrom - Start date for records
+ * @param options.dateTo - End date for records
+ * @param options.domain - RC domain (pbx, rcv, etc.)
+ * @param options.onRecordFetched - Optional callback called immediately after each record's insights are fetched.
+ *                                  Enables progressive processing (e.g., insert to DB as records are fetched).
+ *                                  Return value is ignored.
  */
 export async function fetchRecordingsWithInsights(
   extensionId: string = "~",
@@ -241,6 +248,8 @@ export async function fetchRecordingsWithInsights(
     dateFrom?: string;
     dateTo?: string;
     domain?: string;
+    onRecordFetched?: (record: RCInsightsResponse, index: number, total: number) => Promise<void> | void;
+    skipRecordIds?: Set<string>; // Skip fetching insights for these record IDs (already in DB)
   } = {}
 ): Promise<RCInsightsResponse[]> {
   const domain = options.domain ?? "pbx";
@@ -253,8 +262,24 @@ export async function fetchRecordingsWithInsights(
   });
 
   const recordingsWithInsights: RCInsightsResponse[] = [];
-  const recordingsWithIds = callRecords.filter((r): r is typeof r & { recording: NonNullable<typeof r.recording> } => !!r.recording?.id);
-  console.log(`  Found ${recordingsWithIds.length} recordings with IDs, fetching insights...`);
+  let recordingsWithIds = callRecords.filter((r): r is typeof r & { recording: NonNullable<typeof r.recording> } => !!r.recording?.id);
+
+  // Sort oldest first - critical for smart sync to work correctly on interruption
+  recordingsWithIds.sort((a, b) =>
+    new Date(a.startTime || 0).getTime() - new Date(b.startTime || 0).getTime()
+  );
+
+  // Filter out records we already have (skip expensive insights fetch)
+  const totalBeforeSkip = recordingsWithIds.length;
+  if (options.skipRecordIds?.size) {
+    recordingsWithIds = recordingsWithIds.filter((r) => !options.skipRecordIds!.has(r.recording.id));
+    const skipped = totalBeforeSkip - recordingsWithIds.length;
+    if (skipped > 0) {
+      console.log(`  Skipping ${skipped} already-synced recordings`);
+    }
+  }
+
+  console.log(`  Found ${recordingsWithIds.length} recordings to process (${totalBeforeSkip} total, oldest first)...`);
 
   for (let i = 0; i < recordingsWithIds.length; i++) {
     const record = recordingsWithIds[i];
@@ -267,7 +292,7 @@ export async function fetchRecordingsWithInsights(
 
     if (insights) {
       // Merge call record data with insights
-      recordingsWithInsights.push({
+      const mergedRecord: RCInsightsResponse = {
         ...insights,
         sourceRecordId: insights.sourceRecordId || record.recording.id,
         sourceSessionId: insights.sourceSessionId || record.sessionId,
@@ -275,7 +300,14 @@ export async function fetchRecordingsWithInsights(
         recordingDurationMs: insights.recordingDurationMs || (record.duration ? record.duration * 1000 : undefined),
         recordingStartTime: insights.recordingStartTime || record.startTime,
         audioContentUri: record.recording.contentUri,
-      });
+      };
+
+      // Progressive processing: call callback immediately (enables insert-as-you-go)
+      if (options.onRecordFetched) {
+        await options.onRecordFetched(mergedRecord, i, recordingsWithIds.length);
+      }
+
+      recordingsWithInsights.push(mergedRecord);
     }
 
     // Rate limiting between API calls - RC allows ~40 requests/min for insights

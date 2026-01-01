@@ -33,6 +33,10 @@ import { fetchRecordingsWithInsights } from "@/lib/ringcentral";
  * @param dateFrom - ISO date string (default: 30 days ago)
  * @param dateTo - ISO date string (default: now)
  * @param domain - RC domain: pbx|rcv|rcx|nice-incontact|ms-teams (default: pbx)
+ * @param fullSync - Set to "true" to disable smart sync and fetch all recordings in date range
+ *
+ * Smart Sync (default): Only fetches recordings newer than the last synced recording for each extension.
+ * This avoids re-fetching thousands of recordings that are already in the database.
  *
  * @returns JSON with sync results, failures logged to rc_sync_failures table
  */
@@ -134,74 +138,132 @@ async function syncExtension(
   extensionId: string,
   domain: string,
   dateFrom: string,
-  dateTo: string
+  dateTo: string,
+  useSmartSync: boolean = true
 ): Promise<{
   extensionId: string;
   recordingsFound: number;
   successful: number;
   failed: number;
+  skippedDueToSmartSync: boolean;
+  effectiveDateFrom: string;
   failedDetails?: Array<{ recordId: string; error: string }>;
 }> {
-  console.log(`Fetching RC recordings for extension ${extensionId} from ${dateFrom} to ${dateTo}`);
+  let effectiveDateFrom = dateFrom;
+
+  // Smart sync: check last synced recording for this extension
+  if (useSmartSync) {
+    const { data: lastSynced } = await supabase
+      .from("rc_recordings")
+      .select("recording_start_time")
+      .eq("owner_extension_id", extensionId)
+      .order("recording_start_time", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (lastSynced?.recording_start_time) {
+      // Use last synced time minus 1 day buffer (to catch any stragglers)
+      const lastTime = new Date(lastSynced.recording_start_time);
+      const bufferTime = new Date(lastTime.getTime() - 24 * 60 * 60 * 1000);
+
+      // Only use smart date if it's more recent than the requested dateFrom
+      if (bufferTime > new Date(dateFrom)) {
+        effectiveDateFrom = bufferTime.toISOString();
+        console.log(`Smart sync: last recording at ${lastSynced.recording_start_time}, using ${effectiveDateFrom} as dateFrom`);
+      }
+    }
+  }
+
+  console.log(`Fetching RC recordings for extension ${extensionId} from ${effectiveDateFrom} to ${dateTo}`);
+
+  // Query existing record IDs to skip (avoid re-fetching insights we already have)
+  const { data: existingRecords } = await supabase
+    .from("rc_recordings")
+    .select("source_record_id")
+    .eq("owner_extension_id", extensionId)
+    .gte("recording_start_time", effectiveDateFrom);
+
+  const skipRecordIds = new Set(
+    existingRecords?.map((r) => r.source_record_id).filter((id): id is string => !!id) || []
+  );
+  if (skipRecordIds.size > 0) {
+    console.log(`  Found ${skipRecordIds.size} existing records to skip`);
+  }
+
+  // Track results progressively as each record is fetched and inserted
+  const successful: Array<{ recordId: string }> = [];
+  const failed: Array<{ recordId: string; error: string }> = [];
+
+  // Progressive insert callback - each record is inserted immediately after fetching insights
+  // This ensures crash resilience: if sync fails mid-way, already-processed records are in DB
+  const onRecordFetched = async (rec: Awaited<ReturnType<typeof fetchRecordingsWithInsights>>[0], index: number, total: number) => {
+    const recordId = rec.sourceRecordId;
+    if (!recordId) {
+      console.warn(`  Skipping record ${index}: no sourceRecordId`);
+      return;
+    }
+
+    try {
+      const transcriptText = extractTranscriptText(
+        rec.insights?.Transcript as TranscriptEntry[] | undefined
+      );
+
+      const validDomain = validateDomain(rec.domain, domain);
+      const validDirection = normalizeCallDirection(rec.callDirection);
+
+      const { error } = await supabase.from("rc_recordings").upsert(
+        {
+          source_record_id: recordId,
+          source_session_id: rec.sourceSessionId,
+          title: rec.title,
+          rs_record_uri: rec.rsRecordUri,
+          domain: validDomain,
+          call_direction: validDirection,
+          owner_extension_id: rec.ownerExtensionId,
+          recording_duration_ms: rec.recordingDurationMs,
+          recording_start_time: toTimestamp(rec.recordingStartTime),
+          creation_time: toTimestamp(rec.creationTime),
+          last_modified_time: toTimestamp(rec.lastModifiedTime),
+          speaker_info: rec.speakerInfo ?? [],
+          insights: rec.insights ?? {},
+          transcript_text: transcriptText,
+          audio_content_uri: rec.audioContentUri,
+          synced_at: new Date().toISOString(),
+        },
+        { onConflict: "source_record_id" }
+      );
+
+      if (error) throw error;
+      successful.push({ recordId });
+
+      if ((index + 1) % 10 === 0 || index === total - 1) {
+        console.log(`  Inserted ${index + 1}/${total} (${successful.length} ok, ${failed.length} failed)`);
+      }
+    } catch (error) {
+      const errorMsg = formatError(error);
+      console.error(`Failed to sync record ${recordId}:`, errorMsg);
+      failed.push({ recordId, error: errorMsg });
+    }
+  };
 
   const recordings = await fetchRecordingsWithInsights(extensionId, {
-    dateFrom,
+    dateFrom: effectiveDateFrom,
     dateTo,
     domain,
+    onRecordFetched,
+    skipRecordIds,
   });
 
   if (recordings.length === 0) {
-    return { extensionId, recordingsFound: 0, successful: 0, failed: 0 };
+    return {
+      extensionId,
+      recordingsFound: 0,
+      successful: 0,
+      failed: 0,
+      skippedDueToSmartSync: effectiveDateFrom !== dateFrom,
+      effectiveDateFrom,
+    };
   }
-
-  const results = await Promise.all(
-    recordings.map(async (rec) => {
-      try {
-        const transcriptText = extractTranscriptText(
-          rec.insights?.Transcript as TranscriptEntry[] | undefined
-        );
-
-        const validDomain = validateDomain(rec.domain, domain);
-        const validDirection = normalizeCallDirection(rec.callDirection);
-
-        const { error } = await supabase.from("rc_recordings").upsert(
-          {
-            source_record_id: rec.sourceRecordId,
-            source_session_id: rec.sourceSessionId,
-            title: rec.title,
-            rs_record_uri: rec.rsRecordUri,
-            domain: validDomain,
-            call_direction: validDirection,
-            owner_extension_id: rec.ownerExtensionId,
-            recording_duration_ms: rec.recordingDurationMs,
-            recording_start_time: toTimestamp(rec.recordingStartTime),
-            creation_time: toTimestamp(rec.creationTime),
-            last_modified_time: toTimestamp(rec.lastModifiedTime),
-            speaker_info: rec.speakerInfo ?? [],
-            insights: rec.insights ?? {},
-            transcript_text: transcriptText,
-            audio_content_uri: rec.audioContentUri,
-            synced_at: new Date().toISOString(),
-          },
-          { onConflict: "source_record_id" }
-        );
-
-        if (error) throw error;
-        return { success: true, recordId: rec.sourceRecordId };
-      } catch (error) {
-        const errorMsg = formatError(error);
-        console.error(`Failed to sync record ${rec.sourceRecordId}:`, errorMsg);
-        return { success: false, recordId: rec.sourceRecordId, error: errorMsg };
-      }
-    })
-  );
-
-  const successful = results.filter((r) => r.success);
-  const failed = results.filter((r) => !r.success) as Array<{
-    success: false;
-    recordId: string;
-    error: string;
-  }>;
 
   // Log failures to database
   if (failed.length > 0) {
@@ -235,6 +297,8 @@ async function syncExtension(
     recordingsFound: recordings.length,
     successful: successful.length,
     failed: failed.length,
+    skippedDueToSmartSync: effectiveDateFrom !== dateFrom,
+    effectiveDateFrom,
     failedDetails: failed.length > 0 ? failed.map((f) => ({ recordId: f.recordId, error: f.error })) : undefined,
   };
 }
@@ -260,6 +324,7 @@ export async function GET(request: NextRequest) {
   const dateFrom = searchParams.get("dateFrom") || thirtyDaysAgo.toISOString();
   const dateTo = searchParams.get("dateTo") || now.toISOString();
   const startFrom = searchParams.get("startFrom"); // Resume from this broker name
+  const fullSync = searchParams.get("fullSync") === "true"; // Disable smart sync, fetch all
 
   const supabase = getSupabase();
 
@@ -310,7 +375,7 @@ export async function GET(request: NextRequest) {
         console.log(`\n--- [${i + 1}/${brokersToSync.length}] Syncing ${broker.name} (${broker.rc_extension_id}) ---`);
         console.log(`    If this fails, resume with: ?extensionId=all&startFrom=${encodeURIComponent(broker.name)}`);
 
-        const result = await syncExtension(supabase, broker.rc_extension_id, domain, dateFrom, dateTo);
+        const result = await syncExtension(supabase, broker.rc_extension_id, domain, dateFrom, dateTo, !fullSync);
         allResults.push({ brokerName: broker.name, nextBroker, ...result });
 
         // Rate limiting between brokers
@@ -339,15 +404,19 @@ export async function GET(request: NextRequest) {
     }
 
     // Single extension sync (original behavior)
-    const result = await syncExtension(supabase, extensionIdParam, domain, dateFrom, dateTo);
+    const result = await syncExtension(supabase, extensionIdParam, domain, dateFrom, dateTo, !fullSync);
 
     if (result.recordingsFound === 0) {
       return NextResponse.json({
-        message: "No recordings found",
+        message: result.skippedDueToSmartSync
+          ? "No new recordings found (smart sync active)"
+          : "No recordings found",
         extensionId: extensionIdParam,
         dateFrom,
+        effectiveDateFrom: result.effectiveDateFrom,
         dateTo,
         domain,
+        smartSync: !fullSync,
         durationMs: Date.now() - startTime,
       });
     }
@@ -356,8 +425,10 @@ export async function GET(request: NextRequest) {
       message: `Synced ${result.successful}/${result.recordingsFound} recordings`,
       extensionId: extensionIdParam,
       dateFrom,
+      effectiveDateFrom: result.effectiveDateFrom,
       dateTo,
       domain,
+      smartSync: !fullSync,
       recordingsFound: result.recordingsFound,
       successful: result.successful,
       failed: result.failed,
