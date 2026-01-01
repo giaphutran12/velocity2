@@ -1,283 +1,283 @@
 {
-  "timestamp": "2025-12-31T19:28:15.245Z",
+  "timestamp": "2026-01-01T22:57:11.937Z",
   "source": "Database",
   "totalTested": 39,
-  "valid": 29,
-  "invalid": 10,
+  "valid": 6,
+  "invalid": 33,
   "errors": 0,
   "results": [
     {
       "broker": "Alika Walia",
-      "status": "valid",
-      "httpStatus": 200,
-      "dealsCount": 2,
-      "responseTimeMs": 976
+      "status": "invalid",
+      "httpStatus": 400,
+      "errorMessage": "\"Unexpected error retrieving deals\"",
+      "responseTimeMs": 1164
     },
     {
       "broker": "Amanda Weeks",
       "status": "invalid",
       "httpStatus": 400,
       "errorMessage": "\"Unexpected error retrieving deals\"",
-      "responseTimeMs": 149
+      "responseTimeMs": 114
     },
     {
       "broker": "Bowie Nan",
-      "status": "valid",
-      "httpStatus": 200,
-      "dealsCount": 1,
-      "responseTimeMs": 862
+      "status": "invalid",
+      "httpStatus": 400,
+      "errorMessage": "\"Unexpected error retrieving deals\"",
+      "responseTimeMs": 484
     },
     {
       "broker": "Brandon Viaje-Roque",
-      "status": "valid",
-      "httpStatus": 200,
-      "dealsCount": 0,
-      "responseTimeMs": 270
+      "status": "invalid",
+      "httpStatus": 400,
+      "errorMessage": "\"Unexpected error retrieving deals\"",
+      "responseTimeMs": 525
     },
     {
       "broker": "Brendan Wilson",
-      "status": "valid",
-      "httpStatus": 200,
-      "dealsCount": 3,
-      "responseTimeMs": 874
+      "status": "invalid",
+      "httpStatus": 400,
+      "errorMessage": "\"Unexpected error retrieving deals\"",
+      "responseTimeMs": 550
     },
     {
       "broker": "Charlene Smith",
-      "status": "valid",
-      "httpStatus": 200,
-      "dealsCount": 0,
-      "responseTimeMs": 192
+      "status": "invalid",
+      "httpStatus": 400,
+      "errorMessage": "\"Unexpected error retrieving deals\"",
+      "responseTimeMs": 511
     },
     {
       "broker": "Doyle Minhas",
-      "status": "valid",
-      "httpStatus": 200,
-      "dealsCount": 0,
-      "responseTimeMs": 180
+      "status": "invalid",
+      "httpStatus": 400,
+      "errorMessage": "\"Unexpected error retrieving deals\"",
+      "responseTimeMs": 483
     },
     {
       "broker": "Garry Singh",
-      "status": "valid",
-      "httpStatus": 200,
-      "dealsCount": 0,
-      "responseTimeMs": 188
+      "status": "invalid",
+      "httpStatus": 400,
+      "errorMessage": "\"Unexpected error retrieving deals\"",
+      "responseTimeMs": 489
     },
     {
       "broker": "Gurjit Sandhu",
       "status": "valid",
       "httpStatus": 200,
-      "dealsCount": 1,
-      "responseTimeMs": 566
+      "dealsCount": 0,
+      "responseTimeMs": 229
     },
     {
       "broker": "Gurpreet Kaur",
-      "status": "valid",
-      "httpStatus": 200,
-      "dealsCount": 8,
-      "responseTimeMs": 574
+      "status": "invalid",
+      "httpStatus": 400,
+      "errorMessage": "\"Unexpected error retrieving deals\"",
+      "responseTimeMs": 490
     },
     {
       "broker": "Jayashree Venkatachalam",
       "status": "invalid",
       "httpStatus": 400,
       "errorMessage": "\"Unexpected error retrieving deals\"",
-      "responseTimeMs": 106
+      "responseTimeMs": 118
     },
     {
       "broker": "Jennifer Souvanvong",
       "status": "valid",
       "httpStatus": 200,
-      "dealsCount": 10,
-      "responseTimeMs": 582
+      "dealsCount": 0,
+      "responseTimeMs": 167
     },
     {
       "broker": "Kam Virdi",
       "status": "invalid",
       "httpStatus": 400,
       "errorMessage": "\"Unexpected error retrieving deals\"",
-      "responseTimeMs": 101
+      "responseTimeMs": 115
     },
     {
       "broker": "Karen John",
       "status": "invalid",
       "httpStatus": 400,
       "errorMessage": "\"Unexpected error retrieving deals\"",
-      "responseTimeMs": 102
+      "responseTimeMs": 120
     },
     {
       "broker": "Karny Mehat",
-      "status": "valid",
-      "httpStatus": 200,
-      "dealsCount": 1,
-      "responseTimeMs": 583
-    },
-    {
-      "broker": "Keenan Marshall",
-      "status": "invalid",
-      "httpStatus": 400,
-      "errorMessage": "\"Unexpected error retrieving deals\"",
-      "responseTimeMs": 97
-    },
-    {
-      "broker": "Lesly Camaclang",
-      "status": "valid",
-      "httpStatus": 200,
-      "dealsCount": 3,
-      "responseTimeMs": 392
-    },
-    {
-      "broker": "Megan Robertson",
-      "status": "valid",
-      "httpStatus": 200,
-      "dealsCount": 1,
-      "responseTimeMs": 419
-    },
-    {
-      "broker": "Mindy Basran",
-      "status": "valid",
-      "httpStatus": 200,
-      "dealsCount": 2,
-      "responseTimeMs": 635
-    },
-    {
-      "broker": "Natalie Pacheco",
-      "status": "valid",
-      "httpStatus": 200,
-      "dealsCount": 1,
-      "responseTimeMs": 520
-    },
-    {
-      "broker": "Nav Cheema",
-      "status": "valid",
-      "httpStatus": 200,
-      "dealsCount": 1,
-      "responseTimeMs": 475
-    },
-    {
-      "broker": "Nazneen Nasir Khan",
-      "status": "invalid",
-      "httpStatus": 400,
-      "errorMessage": "\"Unexpected error retrieving deals\"",
-      "responseTimeMs": 127
-    },
-    {
-      "broker": "Olaf Durkowski",
-      "status": "valid",
-      "httpStatus": 200,
-      "dealsCount": 0,
-      "responseTimeMs": 152
-    },
-    {
-      "broker": "Patrick Khouri",
-      "status": "invalid",
-      "httpStatus": 400,
-      "errorMessage": "\"Unexpected error retrieving deals\"",
-      "responseTimeMs": 100
-    },
-    {
-      "broker": "Pina Cundari",
-      "status": "invalid",
-      "httpStatus": 400,
-      "errorMessage": "\"Unexpected error retrieving deals\"",
-      "responseTimeMs": 100
-    },
-    {
-      "broker": "Prem Hoonjan",
-      "status": "invalid",
-      "httpStatus": 400,
-      "errorMessage": "\"Unexpected error retrieving deals\"",
-      "responseTimeMs": 98
-    },
-    {
-      "broker": "Rani Mallhi",
-      "status": "valid",
-      "httpStatus": 200,
-      "dealsCount": 1,
-      "responseTimeMs": 328
-    },
-    {
-      "broker": "Ranier Manding",
-      "status": "valid",
-      "httpStatus": 200,
-      "dealsCount": 0,
-      "responseTimeMs": 136
-    },
-    {
-      "broker": "Renzo Mesia",
-      "status": "valid",
-      "httpStatus": 200,
-      "dealsCount": 2,
-      "responseTimeMs": 352
-    },
-    {
-      "broker": "Riley Morrison",
-      "status": "valid",
-      "httpStatus": 200,
-      "dealsCount": 5,
-      "responseTimeMs": 341
-    },
-    {
-      "broker": "Saihaj Cheema",
-      "status": "valid",
-      "httpStatus": 200,
-      "dealsCount": 1,
-      "responseTimeMs": 348
-    },
-    {
-      "broker": "Salil Singla",
       "status": "valid",
       "httpStatus": 200,
       "dealsCount": 0,
       "responseTimeMs": 151
     },
     {
+      "broker": "Keenan Marshall",
+      "status": "invalid",
+      "httpStatus": 400,
+      "errorMessage": "\"Unexpected error retrieving deals\"",
+      "responseTimeMs": 114
+    },
+    {
+      "broker": "Lesly Camaclang",
+      "status": "invalid",
+      "httpStatus": 400,
+      "errorMessage": "\"Unexpected error retrieving deals\"",
+      "responseTimeMs": 496
+    },
+    {
+      "broker": "Megan Robertson",
+      "status": "invalid",
+      "httpStatus": 400,
+      "errorMessage": "\"Unexpected error retrieving deals\"",
+      "responseTimeMs": 498
+    },
+    {
+      "broker": "Mindy Basran",
+      "status": "invalid",
+      "httpStatus": 400,
+      "errorMessage": "\"Unexpected error retrieving deals\"",
+      "responseTimeMs": 567
+    },
+    {
+      "broker": "Natalie Pacheco",
+      "status": "invalid",
+      "httpStatus": 400,
+      "errorMessage": "\"Unexpected error retrieving deals\"",
+      "responseTimeMs": 530
+    },
+    {
+      "broker": "Nav Cheema",
+      "status": "invalid",
+      "httpStatus": 400,
+      "errorMessage": "\"Unexpected error retrieving deals\"",
+      "responseTimeMs": 484
+    },
+    {
+      "broker": "Nazneen Nasir Khan",
+      "status": "invalid",
+      "httpStatus": 400,
+      "errorMessage": "\"Unexpected error retrieving deals\"",
+      "responseTimeMs": 129
+    },
+    {
+      "broker": "Olaf Durkowski",
+      "status": "invalid",
+      "httpStatus": 400,
+      "errorMessage": "\"Unexpected error retrieving deals\"",
+      "responseTimeMs": 485
+    },
+    {
+      "broker": "Patrick Khouri",
+      "status": "invalid",
+      "httpStatus": 400,
+      "errorMessage": "\"Unexpected error retrieving deals\"",
+      "responseTimeMs": 118
+    },
+    {
+      "broker": "Pina Cundari",
+      "status": "invalid",
+      "httpStatus": 400,
+      "errorMessage": "\"Unexpected error retrieving deals\"",
+      "responseTimeMs": 110
+    },
+    {
+      "broker": "Prem Hoonjan",
+      "status": "invalid",
+      "httpStatus": 400,
+      "errorMessage": "\"Unexpected error retrieving deals\"",
+      "responseTimeMs": 121
+    },
+    {
+      "broker": "Rani Mallhi",
+      "status": "invalid",
+      "httpStatus": 400,
+      "errorMessage": "\"Unexpected error retrieving deals\"",
+      "responseTimeMs": 488
+    },
+    {
+      "broker": "Ranier Manding",
+      "status": "invalid",
+      "httpStatus": 400,
+      "errorMessage": "\"Unexpected error retrieving deals\"",
+      "responseTimeMs": 461
+    },
+    {
+      "broker": "Renzo Mesia",
+      "status": "invalid",
+      "httpStatus": 400,
+      "errorMessage": "\"Unexpected error retrieving deals\"",
+      "responseTimeMs": 507
+    },
+    {
+      "broker": "Riley Morrison",
+      "status": "invalid",
+      "httpStatus": 400,
+      "errorMessage": "\"Unexpected error retrieving deals\"",
+      "responseTimeMs": 462
+    },
+    {
+      "broker": "Saihaj Cheema",
+      "status": "invalid",
+      "httpStatus": 400,
+      "errorMessage": "\"Unexpected error retrieving deals\"",
+      "responseTimeMs": 519
+    },
+    {
+      "broker": "Salil Singla",
+      "status": "invalid",
+      "httpStatus": 400,
+      "errorMessage": "\"Unexpected error retrieving deals\"",
+      "responseTimeMs": 503
+    },
+    {
       "broker": "Serg Martires",
-      "status": "valid",
-      "httpStatus": 200,
-      "dealsCount": 2,
-      "responseTimeMs": 346
+      "status": "invalid",
+      "httpStatus": 400,
+      "errorMessage": "\"Unexpected error retrieving deals\"",
+      "responseTimeMs": 483
     },
     {
       "broker": "Shaneen Mohammed",
       "status": "valid",
       "httpStatus": 200,
-      "dealsCount": 1,
-      "responseTimeMs": 363
+      "dealsCount": 0,
+      "responseTimeMs": 217
     },
     {
       "broker": "Shawn Cantwell",
       "status": "invalid",
       "httpStatus": 400,
       "errorMessage": "\"Unexpected error retrieving deals\"",
-      "responseTimeMs": 94
+      "responseTimeMs": 134
     },
     {
       "broker": "Shiela Jamero",
-      "status": "valid",
-      "httpStatus": 200,
-      "dealsCount": 0,
-      "responseTimeMs": 179
+      "status": "invalid",
+      "httpStatus": 400,
+      "errorMessage": "\"Unexpected error retrieving deals\"",
+      "responseTimeMs": 482
     },
     {
       "broker": "Stephanie Viaje",
-      "status": "valid",
-      "httpStatus": 200,
-      "dealsCount": 2,
-      "responseTimeMs": 342
+      "status": "invalid",
+      "httpStatus": 400,
+      "errorMessage": "\"Unexpected error retrieving deals\"",
+      "responseTimeMs": 490
     },
     {
       "broker": "Sunny Dhillon",
       "status": "valid",
       "httpStatus": 200,
       "dealsCount": 0,
-      "responseTimeMs": 202
+      "responseTimeMs": 155
     },
     {
       "broker": "Valerie Roy",
       "status": "valid",
       "httpStatus": 200,
       "dealsCount": 0,
-      "responseTimeMs": 145
+      "responseTimeMs": 177
     }
   ]
 }
